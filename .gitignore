@@ -1,0 +1,30 @@
+#=============== 
+#v 1.04 modded
+#===============
+**/[Ll]ibrary/
+**/[Tt]emp/
+**/[Oo]bj/
+**/[Bb]uild/
+**/[Bb]uilds/
+**/[Pp]rojectSettings/
+**/[Uu]nityPackageManager/
+
+#=====================================
+#Visual Studio / MonoDevelop generated
+#=====================================# 
+
+
+**/.vs/
+**/.vscpde/
+ExportedObj/
+obj/
+*.svd
+*.userprefs
+*.csproj
+*.pidb
+*.suo
+*.sln
+*.apk
+*.user
+*.unityproj
+*.booproj
