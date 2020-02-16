@@ -68,6 +68,15 @@ public class LayoutPanel : MonoBehaviour
     [SerializeField] string _panelName;
     public void PlaceDropTarget(Transform target, int newSiblingIndex = -1)
     {
+        if (target==null)
+        {
+            Debug.Log("no target");
+            return;
+    }
+    if (LayoutDropTarget.currentTarget!=null &&  LayoutDropTarget.currentTarget.isHorizontal) 
+    {
+     
+    }
         transform.SetParent(target);
         if (newSiblingIndex != -1)
             transform.SetSiblingIndex(newSiblingIndex);

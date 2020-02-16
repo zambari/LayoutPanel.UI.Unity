@@ -90,7 +90,7 @@ namespace zUI
             rectToModify.localPosition = currentpos;
             if (LayoutDropTarget.currentTarget != null)
             {
-                Debug.Log(LayoutDropTarget.currentTarget.name);
+                // Debug.Log(LayoutDropTarget.currentTarget.name);
             }
         }
 
@@ -103,7 +103,7 @@ namespace zUI
            
             if (!freeDrag)
             {
-                Debug.Log("was freedrag");
+                Debug.Log("was non freedrag");
                 if (LayoutDropTarget.currentTarget != null)
                 {
                     Debug.Log("current target was " + LayoutDropTarget.currentTarget.name);

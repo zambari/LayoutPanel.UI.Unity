@@ -13,6 +13,7 @@ namespace zUI
         Transform dropTarget { get; }
         Transform transform { get; }
         GameObject gameObject { get; }
+        bool isHorizontal {get;}
         string name { get; }
     }
 
@@ -294,14 +295,14 @@ namespace zUI
         }
         public void OnPointerEnter(PointerEventData eventData)
         {
-            Debug.Log("pointerneterd " + name, gameObject);
+      //      Debug.Log("pointerneterd " + name, gameObject);
             if (enableDrag && !columnMode && elementToResize != null)
                 Cursor.SetCursor(hoverCursor, cursorCenter, CursorMode.Auto);
             savedColor = image.color;
             image.color = new Color(savedColor.r, savedColor.g, savedColor.b, savedColor.a * alphaMultiplier);
             if (LayoutTopControl.draggedItem != null && LayoutTopControl.draggedItem.transform.parent != transform.parent)
             {
-                if (!isHorizontal)
+               if (!isHorizontal)
                 {
                     LayoutDropTarget.currentTargetObject = gameObject;
                     image.color = dropTargetColor;

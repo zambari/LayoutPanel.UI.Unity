@@ -49,19 +49,19 @@ namespace zUI
                 else
                 { if (hiddenCount == 2)
                     {
-                        name = name.SetTag(" 	┌─┐"); //  
+                        name = name.SetTag("   ┌─┐"); //  
                     } else
                     if (hiddenCount == 4)
                     {
-                        name = name.SetTag(" 	┌━┐"); // ┌─┐ 
+                        name = name.SetTag("   ┌━┐"); // ┌─┐ 
                     }
                     else
                        if (hiddenCount == 5)
                     {
-                        name = name.SetTag(" 	╒═╕");
+                        name = name.SetTag("   ╒═╕");
                     }
                     else
-                        name = name.SetTag(" 	┌" + hiddenCount + "┐");
+                        name = name.SetTag("   ┌" + hiddenCount + "┐");
                 }
                 RepaintHierarchy();
                 //SelectionRepaint()
