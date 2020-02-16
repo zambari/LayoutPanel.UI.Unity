@@ -11,25 +11,27 @@ namespace zUI
     public class LayoutCreator : MonoBehaviour
     {
         public DrawInspectorBg draw;
-        void Reset()
-        {
-            var image = GetComponent<Image>();
-            if (image != null) image.enabled = false;
-        }
-        public int columns = 4;
-        public int maxItemsTop = 4;
+
+        public int columns = 3;
+        public int maxItemsTop = 3;
         public int maxItemsBottom = 2;
         public Color startColor = new Color(0, 0.408f, 0.945f, 0.559f);
         public Color endColor = new Color(0.000f, 0.851f, 0.302f, 0.578f);
         public Color textColor = Color.white * 0.8f;
         public Color topColor = Color.white * 0.4f;
-        float flexHeight = 0.2f;
-        float flexWidth = 0.02f;
-        public bool leaveLastColumnEmpty = true;
 
+        public bool leaveLastColumnEmpty = true;
+        [Header("Visible borders")]
+        public bool hideCreatedBordersInHierarchy = true;
+        public bool bordersPlacedInside = false;
+        // float flexHeight = 0.2f;
+        float flexWidth = 0.02f;
         [ExposeMethodInEditor]
         public void CreateSetup()
         {
+            var image = GetComponent<Image>();
+            if (image != null) image.enabled = false;
+
             if (columns < 2) columns = 2;
             var columnParentRect = LayoutEditorUtilities.CreateHoritontalOrVertical(GetComponent<RectTransform>(), LayoutEditorUtilities.LayoutDirection.Horizontal, columns, 0.01f);
             columnParentRect.sizeDelta = new Vector2(-2 * LayoutPanel.borderSize, -6 * LayoutPanel.borderSize);
@@ -50,7 +52,8 @@ namespace zUI
                 var thisColumn = columnParentRect.GetChild(i).gameObject;
                 thisColumn.name = "Column " + i;
                 AddColumnBorders(thisColumn, Color.Lerp(startColor, endColor, (float)i / columnParentRect.childCount));
-                thisColumn.AddComponent<LayoutBorderHide>();
+                var border = thisColumn.AddComponent<LayoutBorderHide>();
+                border.borderHideMode = hideCreatedBordersInHierarchy ? LayoutBorderHide.BorderHideMode.Hidden : LayoutBorderHide.BorderHideMode.Visible;
                 thisColumn.GetComponent<Image>().enabled = false;
                 if (i < columnParentRect.childCount - 1 || !leaveLastColumnEmpty) AddRandomChildren(thisColumn.gameObject, Random.Range(1, maxItemsTop), ref panels);
                 CreateSpacer(thisColumn.gameObject, flexWidth, flexWidth);
@@ -60,9 +63,47 @@ namespace zUI
 
             SetColors(panels);
             UpdateBorders();
+#if UNITY_EDITOR
+            EditorApplication.delayCall += () => Selection.activeGameObject = gameObject;
+#endif
         }
+        void ChangeToObject(GameObject obj)
+        {
+#if UNITY_EDITOR
+            Debug.Log("chaned");
+            DestroyImmediate(this);
+            Selection.activeGameObject = obj;
+            obj.AddComponent<LayoutCreator>();
+#endif
+        }
+        void Reset()
+        {
 
+#if UNITY_EDITOR
+            Canvas canvas = GetComponentInParent<Canvas>();
+            if (canvas == null)
+            {
+                Debug.Log("Please add me to a panel to your canvas (start with UI image/panel), currently no canvas is found in parent");
+                DestroyImmediate(this);
+                return;
 
+            }
+            if (canvas.transform == transform)
+            {
+                var newObj = canvas.GetComponent<RectTransform>().AddImageChild();
+                EditorApplication.delayCall += () => ChangeToObject(newObj.gameObject);
+                return;
+            }
+#endif
+            Image image = GetComponent<Image>();
+            if (image.color == Color.white)
+            {
+                Undo.RegisterCompleteObjectUndo(image, "color");
+                image.color = (Color.black + Color.white * 0.2f).Randomize();
+            }
+            RectTransform rect = GetComponent<RectTransform>();
+            if (rect.rect.width == 100 && rect.rect.height == 100) rect.sizeDelta = new Vector2(300, 400);
+        }
         void UpdateBorders()
         {
             var borders = gameObject.GetComponentsInChildren<LayoutBorderDragger>();
@@ -71,7 +112,11 @@ namespace zUI
         void AddRandomChildren(GameObject parent, int count, ref List<LayoutPanel> panels)
         {
             for (int j = 0; j < count; j++)
-                panels.Add(CreatePanel(parent, "Item [" + (panels.Count + 1) + " ] " + zExtensionPrimitives.RandomString(3)));
+            {
+                var panel = CreatePanel(parent, "Item [" + (panels.Count + 1) + " ] " + zExtensionPrimitives.RandomString(3));
+                panel.freeMode = false;
+                panels.Add(panel);
+            }
 
         }
 
@@ -103,15 +148,12 @@ namespace zUI
             thisGrandChild.name = newName;
 
             var creator = thisGrandChild.gameObject.AddComponent<LayoutItemCreator>();
-            creator.AddBordersAndSampleContent();
+            creator.bordersPlacedInside = bordersPlacedInside;
+            creator.borderHideMode = hideCreatedBordersInHierarchy ? LayoutBorderHide.BorderHideMode.Hidden : LayoutBorderHide.BorderHideMode.Visible;
+            creator.ConvertToLayoutPanel();
 
             var panel = creator.GetComponent<LayoutPanel>();
             var contentle = panel.resizableElement;
-#if UNITY_EDITOR
-            var canvasrend = panel.GetComponent<CanvasRenderer>();
-
-#endif
-
             contentle.preferredHeight = Random.Range(LayoutPanel.topHeight, LayoutPanel.topHeight * 5);
             creator.RemoveMe();
             thisGrandChild.transform.SetParent(parent.transform);
@@ -127,8 +169,8 @@ namespace zUI
             var e = b.gameObject.AddComponent<LayoutBorderDragger>();
             e.columnMode = true;
             d.columnMode = true;
-            e.side = LayoutBorderDragger.Side.Bottom;
-            d.side = LayoutBorderDragger.Side.Top;
+            e.side = Side.Bottom;
+            d.side = Side.Top;
         }
 
         [ExposeMethodInEditor]

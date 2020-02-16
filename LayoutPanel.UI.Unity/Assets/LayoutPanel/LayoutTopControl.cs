@@ -18,7 +18,7 @@ namespace zUI
         RectTransform rectToModify;
         public static LayoutTopControl draggedItem;
         public bool dragEnabled = true;
-        public bool freeDrag { get { return panel.freeMode; }}
+        public bool freeDrag { get { return panel.freeMode; } }
         int savedSibilingIndex;
         LayoutPanel panel;
         Transform savedParent;
@@ -26,6 +26,9 @@ namespace zUI
         float dragOpacity = 0.3f;
         float lastClickTime;
         float timeToDubleCick = 0.5f;
+        bool wasIgnore;
+        bool savedFreeDragState;
+
         public void OnPointerClick(PointerEventData e)
         {
             if (Time.unscaledTime - lastClickTime < timeToDubleCick)
@@ -35,26 +38,29 @@ namespace zUI
             }
             lastClickTime = Time.unscaledTime;
         }
-        bool wasIgnore;
+        LayoutElement le;
+
         public void OnBeginDrag(PointerEventData e)
         {
             if (canvas == null) canvas = GetComponentInParent<Canvas>();
             if (!dragEnabled) return;
             if (panel == null) panel = GetComponentInParent<LayoutPanel>();
 
-
-            savedParent = panel.transform.parent;
-
-            savedSibilingIndex = panel.transform.GetSiblingIndex();
-
-            var ll = panel.GetComponent<LayoutElement>();
+            if (panel != null)
             {
-                if (ll != null)
+                savedParent = panel.transform.parent;
+                savedSibilingIndex = panel.transform.GetSiblingIndex();
+
+                var ll = panel.GetComponent<LayoutElement>();
                 {
-                    wasIgnore = ll.ignoreLayout;
-                    ll.ignoreLayout = true;
+                    if (ll != null)
+                    {
+                        wasIgnore = ll.ignoreLayout;
+                        ll.ignoreLayout = true;
+                    }
                 }
             }
+
             draggedItem = this;
             if (!freeDrag)
             {
@@ -62,21 +68,30 @@ namespace zUI
                 panel.AddOrGetComponent<CanvasGroup>().alpha = dragOpacity;
                 panel.PlaceDropTarget(canvas.transform, -1);
             }
-            
-            
-            panel.freeMode=true; /// !!!11
-
+            savedFreeDragState = panel.freeMode;
+            panel.freeMode = true; /// !!!11
             Cursor.SetCursor(zResourceLoader.panCursor, LayoutBorderDragger.cursorCenter, CursorMode.Auto);
         }
-
         public void OnDrag(PointerEventData e)
         {
             if (!dragEnabled) return;
-            if (rectToModify == null) rectToModify = panel.GetComponent<RectTransform>();
+
+
+            if (rectToModify == null)
+            {
+                if (panel != null)
+                    rectToModify = panel.GetComponent<RectTransform>();
+                else
+                    rectToModify = transform.parent.GetComponent<RectTransform>();
+
+            }
             var currentpos = rectToModify.localPosition;
             currentpos += new Vector3(e.delta.x / canvas.scaleFactor, e.delta.y / canvas.scaleFactor, 0);
             rectToModify.localPosition = currentpos;
-
+            if (LayoutDropTarget.currentTarget != null)
+            {
+                Debug.Log(LayoutDropTarget.currentTarget.name);
+            }
         }
 
         public void OnEndDrag(PointerEventData e)
@@ -84,17 +99,29 @@ namespace zUI
             if (!dragEnabled) return;
             panel.AddOrGetComponent<CanvasGroup>().blocksRaycasts = true;
             panel.gameObject.AddOrGetComponent<CanvasGroup>().alpha = 1;
+             panel.freeMode = savedFreeDragState;
+           
             if (!freeDrag)
             {
+                Debug.Log("was freedrag");
                 if (LayoutDropTarget.currentTarget != null)
+                {
+                    Debug.Log("current target was " + LayoutDropTarget.currentTarget.name);
                     panel.PlaceDropTarget(LayoutDropTarget.currentTarget.dropTarget, LayoutDropTarget.currentTarget.targetDropIndex);
+                }
                 else
                 {
+                    Debug.Log("was no target");
                     panel.PlaceDropTarget(savedParent, savedSibilingIndex);
                 }
                 var ll = panel.GetComponent<LayoutElement>();
                 if (ll != null) ll.ignoreLayout = wasIgnore;
             }
+            else
+            {
+                Debug.Log("was freedrag");
+            }
+            Debug.Log("ended drag");
             draggedItem = null;
             Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
         }
@@ -103,14 +130,12 @@ namespace zUI
             if (panel == null) panel = GetComponentInParent<LayoutPanel>();
             OnValidate();
         }
-        LayoutElement le;
         void OnValidate()
         {
 
             if (!isActiveAndEnabled) return;
-            //name = LayoutBorderDragger.baseName + " Top Handle";
-            name = "┌╢  ╟┐" ; 
-            
+            name = "┌─╢  ╟─┐";
+
             UpdateSize();
             var rect = GetComponent<RectTransform>();
             rect.anchorMin = new Vector2(0f, 1f);

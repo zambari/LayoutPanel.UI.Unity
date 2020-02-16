@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using LayoutPanelDependencies;
+using Z;
 #if UNITY_EDITOR
 
 using UnityEditor;
@@ -18,72 +19,6 @@ namespace zUI
     {
         public DrawInspectorBg draw;
         public enum BorderHideMode { Visible, Hidden, TopOnly }
-        public BorderHideMode borderHideMode
-        {
-            get { return _borderHideMode; }
-            set
-            {
-                _borderHideMode = value;
-
-                if (applyToAllChildren)
-                {
-                    var bs = gameObject.GetComponentsInChildren<LayoutBorderDragger>();
-                    var tops = gameObject.GetComponentsInChildren<LayoutTopControl>();
-                    if (_borderHideMode == BorderHideMode.Hidden)
-                        foreach (var t in tops)
-                            t.gameObject.hideFlags = HideFlags.HideInHierarchy;
-                    if (_borderHideMode == BorderHideMode.Hidden || _borderHideMode == BorderHideMode.TopOnly)
-                    {
-                        foreach (var b in bs)
-                            b.gameObject.hideFlags = HideFlags.HideInHierarchy;
-                    }
-                    else
-                    {
-                        foreach (var t in tops)
-                            t.gameObject.hideFlags = HideFlags.None;
-                        foreach (var b in bs)
-                            b.gameObject.hideFlags = HideFlags.None;
-                    }
-                }
-                else
-                    for (int i = 0; i < transform.childCount; i++)
-                    {
-                        var thisGame = transform.GetChild(i).gameObject;
-                        if (thisGame.name.Contains(LayoutBorderDragger.baseName))
-                        {
-                            if (_borderHideMode == BorderHideMode.TopOnly)
-                            {
-                                if (thisGame.name.Contains("Top"))
-                                    thisGame.hideFlags = (_borderHideMode == BorderHideMode.TopOnly ? HideFlags.None : HideFlags.HideInHierarchy);
-                                else thisGame.hideFlags = HideFlags.HideInHierarchy;
-                            }
-                            else
-                            {
-                                thisGame.hideFlags = (_borderHideMode == BorderHideMode.Hidden ? HideFlags.HideInHierarchy : HideFlags.None);
-                            }
-                        }
-                    }
-
-
-                RepaintHierarchy();
-
-#if UNITY_EDITOR
-
-                /*    var sel = Selection.activeGameObject;
-                Selection.activeGameObject = null;
-                EditorApplication.delayCall += () => Selection.activeGameObject = sel;*/
-#endif
-            }
-        }
-
-        public static void RepaintHierarchy()
-        {
-#if UNITY_EDITOR
-            EditorApplication.RepaintHierarchyWindow();
-            //        EditorApplication.DirtyHierarchyWindowSorting();
-#endif
-
-        }
         [ClickableEnum]
         [SerializeField]
         BorderHideMode _borderHideMode;
@@ -97,6 +32,134 @@ namespace zUI
         }
         public Color borderColor;
 
+        public BorderHideMode borderHideMode
+        {
+            get { return _borderHideMode; }
+            set
+            {
+                _borderHideMode = value;
+                int hiddenCount = 0;
+                if (applyToAllChildren)
+                {
+                    hiddenCount = SetBasedOnGetComponents();
+                }
+                else
+                    hiddenCount = SetBasedOnRoot(transform);
+                if (hiddenCount == 0) name = name.RemoveTag();
+                else
+                { if (hiddenCount == 2)
+                    {
+                        name = name.SetTag(" 	┌─┐"); //  
+                    } else
+                    if (hiddenCount == 4)
+                    {
+                        name = name.SetTag(" 	┌━┐"); // ┌─┐ 
+                    }
+                    else
+                       if (hiddenCount == 5)
+                    {
+                        name = name.SetTag(" 	╒═╕");
+                    }
+                    else
+                        name = name.SetTag(" 	┌" + hiddenCount + "┐");
+                }
+                RepaintHierarchy();
+                //SelectionRepaint()
+            }
+        }
+
+        [Header("In case of invisible objects")]
+        public bool unhideAllObjectsInScene;
+
+        int SetBasedOnGetComponents()
+        {
+            Debug.Log("warning, setting visibility based on getcomponentinchildren: this only works on active objects", gameObject);
+            var bs = gameObject.GetComponentsInChildren<LayoutBorderDragger>();
+            var tops = gameObject.GetComponentsInChildren<LayoutTopControl>();
+            int hiddenCount = 0;
+            if (_borderHideMode == BorderHideMode.Hidden)
+                foreach (var t in tops)
+                {
+                    hiddenCount++;
+                    t.gameObject.hideFlags = HideFlags.HideInHierarchy;
+                }
+            if (_borderHideMode == BorderHideMode.Hidden || _borderHideMode == BorderHideMode.TopOnly)
+            {
+                foreach (var b in bs)
+                {
+                    b.gameObject.hideFlags = HideFlags.HideInHierarchy;
+                    hiddenCount++;
+                }
+            }
+            else
+            {
+                foreach (var t in tops)
+                    t.gameObject.hideFlags = HideFlags.None;
+                foreach (var b in bs)
+                    b.gameObject.hideFlags = HideFlags.None;
+            }
+            return hiddenCount;
+        }
+        int SetBasedOnRoot(Transform source)
+        {
+            int hiddenCount = 0;
+            for (int i = 0; i < source.childCount; i++)
+            {
+                var thisGame = source.GetChild(i).gameObject;
+                if (thisGame.GetComponent<LayoutBorderDragger>() != null)
+                {
+                    if (_borderHideMode == BorderHideMode.Visible)
+                        thisGame.hideFlags = HideFlags.None;
+                    else
+                    {
+                        hiddenCount++;
+                        thisGame.hideFlags = HideFlags.HideInHierarchy;
+                    }
+                }
+                else
+                {
+                    if (thisGame.GetComponent<LayoutTopControl>())
+                        if (_borderHideMode == BorderHideMode.Hidden)
+                        {
+                            hiddenCount++;
+                            thisGame.hideFlags = HideFlags.HideInHierarchy;
+                        }
+                        else
+                        {
+                            thisGame.hideFlags = HideFlags.None;
+                        }
+
+                }
+            }
+            return hiddenCount;
+        }
+        void SelectionRepaint()
+        {
+            // BRUTEFORCE BEGIN
+
+            var sel = Selection.activeGameObject;
+            if (sel == gameObject)
+            {
+                if (transform.parent != null)
+                {
+                    Selection.activeGameObject = transform.parent.gameObject;
+                    EditorApplication.delayCall += () => Selection.activeGameObject = sel;
+                }
+            }
+            // BRUTEFORCE END
+        }
+        public static void RepaintHierarchy()
+        {
+#if UNITY_EDITOR
+            try
+            {
+                EditorApplication.RepaintHierarchyWindow();
+                EditorApplication.DirtyHierarchyWindowSorting();
+            }
+            catch { }
+#endif
+        }
+
 
 #if UNITY_EDITOR
         void Reset()
@@ -107,14 +170,43 @@ namespace zUI
 
             var b = GetComponentInChildren<LayoutBorderDragger>();
             if (b != null) borderColor = b.GetComponent<Image>().color;
-            else borderColor = Color.gray * 0.5f;
+            else
+                borderColor = Color.gray * 0.6f + (new Color(Random.value, Random.value, Random.value)) * 0.3f;
 
         }
 #endif
+        void UnhideAll()
+        {
+            unhideAllObjectsInScene = false;
+#if UNITY_EDITOR
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().isDirty)
+            {
+                Debug.Log("please save your scene first, this can be danerous");
+                return;
+            }
+
+            var all = Resources.FindObjectsOfTypeAll(typeof(GameObject)) as GameObject[];
+            int modified = 0;
+            //    Undo.RegisterUndo("hideflags");
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i].hideFlags == HideFlags.HideInHierarchy)
+                {
+                    Debug.Log("found flag " + all[i].hideFlags, all[i]);
+                    modified++;
+                    //  Undo.RegisterUndo(all[i], "hideflags");
+                    all[i].hideFlags = HideFlags.None;
+                }
+            }
+            Debug.Log("Modified " + modified + " objects out of total of " + all.Length);
+#endif
+        }
         void OnValidate()
         {
             borderHideMode = _borderHideMode;
-            borderHideMode = BorderHideMode.Visible;
+            if (unhideAllObjectsInScene) UnhideAll();
+
+            // borderHideMode = BorderHideMode.Visible;
             if (editColors)
             {
                 if (applyToAllChildren)

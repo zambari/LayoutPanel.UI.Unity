@@ -28,6 +28,22 @@ public class LayoutFoldController : MonoBehaviour
     bool isAnimating;
     public System.Action<bool> onFold;
     public bool ignoreSavedKeepDisabledList = true;
+
+    [SerializeField] Text _foldLabelText;
+
+    public Text foldLabelText
+    {
+        get { return _foldLabelText; }
+        set
+        {
+            _foldLabelText = value;
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.delayCall += () => _foldLabelText.SetText(GetFoldString());
+#else
+            _foldLabelText.SetText(GetFoldString());
+#endif
+        }
+    }
     [ExposeMethodInEditor]
     public void ToggleFold()
     {
@@ -41,8 +57,16 @@ public class LayoutFoldController : MonoBehaviour
             Fold(!isFolded);
     }
 
+    public string GetFoldString()
+    {
+        if (isFolded)
+            return isLeftSide ? labelFoldedAlt : labelFolded; //▲ ▶ ◀ ▼
+        else
+            return labelUnfolded;
+    }
     void OnValidate()
     {
+        if (foldLabelText != null) foldLabelText.text = GetFoldString();
         UpdateSize();
     }
     void UpdateSize()
@@ -72,11 +96,11 @@ public class LayoutFoldController : MonoBehaviour
     public void Fold(bool newFold)
     {
 
-     /*  if (!isActiveAndEnabled)
-        {
-            Debug.Log("inactive");
-            return;
-        } */ 
+        /*  if (!isActiveAndEnabled)
+           {
+               Debug.Log("inactive");
+               return;
+           } */
         if (newFold && isFolded) return;
         if (!newFold && !isFolded) return;
         if (!gameObject.activeInHierarchy) return;
@@ -84,12 +108,13 @@ public class LayoutFoldController : MonoBehaviour
             StartCoroutine(Fold());
         else
             StartCoroutine(UnFold());
-            
-        if (isFolded)
-            foldButton.GetComponentInChildren<Text>().SetText(isLeftSide ? labelFoldedAlt : labelFolded); //▲ ▶ ◀ ▼
-        else
-            foldButton.GetComponentInChildren<Text>().SetText(labelUnfolded);
+        foldLabelText.SetText(GetFoldString());
+        // if (isFolded)
+        //    foldLabelText.SetText(isLeftSide ? labelFoldedAlt : labelFolded); //▲ ▶ ◀ ▼
+        // else
+        //    foldLabelText.SetText(labelUnfolded);
     }
+
     bool CanStartCoroutine()
     {
         if (!isActiveAndEnabled) return false;

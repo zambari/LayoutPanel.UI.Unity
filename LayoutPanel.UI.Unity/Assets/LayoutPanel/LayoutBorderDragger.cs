@@ -20,7 +20,14 @@ namespace zUI
     public static class LayoutDropTarget
     {
         public static GameObject currentTargetObject;
-        public static IDropTarget currentTarget { get { if (currentTargetObject == null) return null; else return currentTargetObject.GetComponent<IDropTarget>(); } }
+        public static IDropTarget currentTarget
+        {
+            get
+            {
+                if (currentTargetObject == null) return null;
+                else return currentTargetObject.GetComponent<IDropTarget>();
+            }
+        }
     }
 
     [RequireComponent(typeof(LayoutElement))]
@@ -29,25 +36,33 @@ namespace zUI
     {
 
         public DrawInspectorBg draw;
+
+        int minRectWidth = 50; // won't allow scaling lower than that
+        int minRectHeight = 30; // won't allow scaling lower than that
         public bool columnMode;
         public static string baseName { get { return "[Panel]"; } }
-        bool positionOutside = true;
         LayoutPanel panel;
-        public bool freeResizeMode { get { return panel.freeMode; } }
+        public bool freeResizeMode
+        {
+            get
+            {
+                if (panel == null) return true;
+                return panel.freeMode;
+            }
+        }
         //[HideInInspector] 
         public VerticalLayoutGroup groupToDisableWhenDragging;
         [SerializeField]
         protected Texture2D hoverCursor;
         public static Color dropTargetColor { get { return new Color(0.2f, 1, 0.2f, 0.9f); } }
-        public enum Side { Top, Left , Right, Bottom}; //reordered for inspector unicodes
-        [SerializeField] Side _side;
 
-        [ReadOnly] [SerializeField] bool customElementToModify;
+        [SerializeField] Side _side;
 
         LayoutFoldController foldController;
         Color savedColor;
 
-        [HideInInspector] [SerializeField] bool sideInside;
+
+        [SerializeField] public bool bordersPlacedInside;
         RectTransform rect { get { if (_rect == null) _rect = GetComponent<RectTransform>(); return _rect; } }
         RectTransform _rect;
         Image image { get { if (_image == null) _image = GetComponent<Image>(); return _image; } }
@@ -57,16 +72,17 @@ namespace zUI
         const float columnModeOffset = 3f;
         bool isFolded;
         static float alphaMultiplier = 1.5f;
-        float columnMulit = 1.3f;
+        RectTransform targetRect;
         public bool enableDrag
         {
             get
             {
                 if (isFolded) return false;
-                if (elementToResize == null) return false;
+                // if (elementToResize == null) return false;
                 if (panel == null) panel = GetComponentInParent<LayoutPanel>();
                 if (panel != null)
                 {
+                    if (panel.freeMode) return true;
                     if (side == Side.Top) return panel.isAlignedBottom;
                     if (side == Side.Bottom) return !panel.isAlignedBottom;
                 }
@@ -74,67 +90,8 @@ namespace zUI
             }
         }
 
-
-        string sideStringDouble
-        {
-            get
-            {
-                switch (_side)
-                {
-                    case Side.Left: return "⇇";
-                    case Side.Right: return "⇉";
-                    case Side.Top: return "⇈";
-                    case Side.Bottom: return "⇊";
-
-                }
-                return null;
-            }
-        }
-
-
-        string sideStringHollow
-        {
-            get
-            {
-                switch (_side)
-                {
-                    case Side.Left: return "⇦";
-                    case Side.Right: return "⇨";
-                    case Side.Top: return "⇧";
-                    case Side.Bottom: return "⇩";
-
-                }
-                return null;
-            }
-        }
-        string sideString
-        {
-            get
-            {
-                switch (_side)
-                {
-                    case Side.Top: return "┌═══┐"; //"╒═══╕";
-                    case Side.Left: return "╠──   ";//"╠═──   ";
-
-                    case Side.Right: return "   ──╣";//"  ──═╣";
-
-                    case Side.Bottom: return "┕═══┙";// "╘═══╛";
-
-                }
-                return null;
-            }
-        }
-
-        string sideStringFour
-        {
-            get
-            {
-                string n = sideString;
-                return n + n + n + n;
-
-            }
-        }
-        [SerializeField] bool sideStrechToBottomCorner = true;
+        bool restorePivotAfterMove = true;
+        Vector2 savedPivot;
 
         public LayoutElement elementToResize
         {
@@ -166,84 +123,48 @@ namespace zUI
                 }
             }
         }
+
+        void SetSize()
+        {
+            float border = columnMode ? 1.1f * LayoutPanel.borderSize : LayoutPanel.borderSize;
+            Vector2 newSize = side.isHorizontal() ? new Vector2(border, 0) : new Vector2(bordersPlacedInside ? -2 : 2 * border, border);
+
+
+            if (LayoutTopControl.draggedItem != null && LayoutDropTarget.currentTargetObject == gameObject)
+            {
+                if (isHorizontal) newSize.x += border; else newSize.y += border;
+
+            }
+            rect.sizeDelta = newSize;
+        }
         public Side side
         {
             get { return _side; }
             set
             {
-                Vector3 newAnchoredPosition = Vector3.zero; ;
-                float border = columnMode ? 1.1f * LayoutPanel.borderSize : LayoutPanel.borderSize;
+
+
+                Vector3 newAnchoredPosition = Vector3.zero;
                 _side = value;
-                if (_side == Side.Left)
-                {
-                    rect.anchorMin = new Vector2(0, 0);
-                    rect.anchorMax = new Vector2(0, 1);
-                    if (sideInside)
-                        rect.pivot = new Vector2(0, .5f);
-                    else
-                        rect.pivot = new Vector2(1, .5f);
-                    rect.sizeDelta = new Vector2(border, 0);
-                }
-                if (_side == Side.Right)
-                {
-                    rect.anchorMin = new Vector2(1, 0);
-                    rect.anchorMax = new Vector2(1, 1);
-                    if (sideInside)
-                        rect.pivot = new Vector2(1, .5f);
-                    else
-                        rect.pivot = new Vector2(0, .5f);
-                    rect.sizeDelta = new Vector2(border, 0);
+                rect.anchorMin = _side.GetAnchorMin();
+                rect.anchorMax = _side.GetAnchorMax();
+                rect.pivot = _side.GetPivot(bordersPlacedInside);
 
-                }
-                if (sideStrechToBottomCorner && (_side == Side.Left || _side == Side.Right))
-                    rect.sizeDelta = new Vector2(border, 2 * border);
+                rect.anchoredPosition = Vector2.zero;
 
-                if (_side == Side.Top)
-                {
-                    rect.anchorMin = new Vector2(0, 1);
-                    rect.anchorMax = new Vector2(1, 1);
-                    rect.pivot = new Vector2(0, positionOutside ? 0 : 1);
-                    if (columnMode)
-                    {
-                        rect.pivot = new Vector2(0.5f, .5f);
-                        rect.sizeDelta = new Vector2(border * columnMulit, border * columnMulit);
-                    }
-                    else
-                        rect.sizeDelta = new Vector2(0, border);
-                }
-                if (_side == Side.Bottom)
-                {
-                    rect.anchorMin = new Vector2(0, 0);
-                    rect.anchorMax = new Vector2(1, 0);
-                    rect.pivot = new Vector2(0, positionOutside ? 1 : 0);
-                    if (columnMode)
-                    {
-                        rect.pivot = new Vector2(0.5f, .5f);
-                        rect.sizeDelta = new Vector2(border * columnMulit, border * columnMulit);
-                    }
-                    else
-                        rect.sizeDelta = new Vector2(0, border);
-                }
-
-                if (LayoutTopControl.draggedItem != null && LayoutDropTarget.currentTargetObject == gameObject)
-                {
-                    rect.sizeDelta = rect.sizeDelta * 2;// isHorizontal ? rect.sizeDelta = new Vector2(borderSize * 2, 0) : rect.sizeDelta = new Vector2(0, borderSize * 2);
-                }
                 if (columnMode)
                 {
                     if (_side == Side.Top)
-                    {
                         newAnchoredPosition += new Vector3(0, LayoutPanel.borderSize * columnModeOffset);
-                    }
                     if (_side == Side.Bottom)
-                    {
                         newAnchoredPosition += new Vector3(0, -LayoutPanel.borderSize * columnModeOffset);
-                    }
+                    //  if
+                    //name = LayoutBorderDragger.baseName + " " + _side + " dragger";
+                    name = side.GetObjectLabel();
+                    rect.anchoredPosition = newAnchoredPosition;
+                    GetCursor();
                 }
-                //name = LayoutBorderDragger.baseName + " " + _side + " dragger";
-                name = sideString;
-                rect.anchoredPosition = newAnchoredPosition;
-                GetCursor();
+                SetSize();
             }
         }
         public int targetDropIndex
@@ -252,18 +173,16 @@ namespace zUI
             {
                 if (columnMode)
                 {
-                    if (side == LayoutBorderDragger.Side.Top)
+                    if (side == Side.Top)
                         return 0;
                     else
                         return -1;
                 }
                 var thissib = panel.transform.GetSiblingIndex();
-                if (side == LayoutBorderDragger.Side.Bottom) thissib++;
+                if (side == Side.Bottom) thissib++;
                 return thissib;
             }
         }
-
-
 
         void GetCursor()
         {
@@ -275,18 +194,14 @@ namespace zUI
 
         void OnValidate()
         {
-            GetCursor();
-            GetTargets();
-            Redraw();
-
-            //  GetTargetElement();
-        }
-        void Redraw()
-        {
             var le = gameObject.AddOrGetComponent<LayoutElement>();
             if (le != null) le.ignoreLayout = true;
+
+            GetCursor();
+            GetTargets();
             side = side;
         }
+
         void GetTargets()
         {
             if (panel == null) panel = GetComponentInParent<LayoutPanel>();
@@ -294,8 +209,8 @@ namespace zUI
         }
         void OnEnable()
         {
-            LayoutPanel.onBorderSizeChange += Redraw;
-            Redraw();
+            LayoutPanel.onBorderSizeChange += SetSize;
+            SetSize();
             GetTargets();
             foldController = GetComponentInParent<LayoutFoldController>();
             if (foldController != null)
@@ -303,118 +218,88 @@ namespace zUI
                 foldController.onFold += OnFoldToggle;
                 OnFoldToggle(foldController.isFolded);
             }
+            var vh = GetComponentInParent<LayoutBorderHide>();
+            if (vh != null)
+            {
+                image.color = vh.borderColor;
+            }
         }
 
         void OnFoldToggle(bool b)
         {
             isFolded = b;
             side = side;
-            // if (isHorizontal) image.enabled = !b;
         }
         void OnDisable()
         {
-            LayoutPanel.onBorderSizeChange -= Redraw;
+            LayoutPanel.onBorderSizeChange -= SetSize;
             if (foldController != null)
                 foldController.onFold -= OnFoldToggle;
         }
         public void OnBeginDrag(PointerEventData eventData)
         {
             if (!enableDrag)
-            {
-                //                Debug.Log("dragging not enabled");
                 return;
-            }
-            if (elementToResize == null)
-            {
-                Debug.Log("did not find elementToResize");
-            }
+
             if (groupToDisableWhenDragging != null) groupToDisableWhenDragging.enabled = false;
             if (hoverCursor == null) GetCursor();
+            if (freeResizeMode)
+            {
+                targetRect = transform.parent.GetComponent<RectTransform>();
+                savedPivot = targetRect.pivot;
+            }
+            else
+            {
+                if (elementToResize == null)
+                {
+                    Debug.Log("did not find elementToResize");
+                }
+            }
         }
 
         public void OnEndDrag(PointerEventData eventData)
         {
             if (groupToDisableWhenDragging != null) groupToDisableWhenDragging.enabled = true;
+            if (targetRect != null && restorePivotAfterMove)
+                targetRect.SetPivot(savedPivot);
 
         }
-        public void OnDrag(PointerEventData eventData)
+        public void OnDrag(PointerEventData thisEventData)
         {
-            if (!enableDrag) return;
-            if (elementToResize == null)
+            if (!enableDrag)
+                return;
+            Vector2 delta = thisEventData.delta;
+
+            if (elementToResize == null && !freeResizeMode)
             {
                 Debug.Log("sorry, no target element");
                 return;
             }
             if (!freeResizeMode)
             {
-                if (side == Side.Left || side == Side.Right)
-                {
-                    if (side == Side.Left)
-                        elementToResize.preferredWidth -= eventData.delta.x / 2;
-
-                    if (side == Side.Right)
-                        elementToResize.preferredWidth += eventData.delta.x / 2;
-                    if (elementToResize.preferredWidth <= 1) elementToResize.preferredWidth = 32;
-
-                }
-                if (side == Side.Top)
-                    elementToResize.preferredHeight += eventData.delta.y;
-                if (side == Side.Bottom)
-                    if (elementToResize.preferredHeight > eventData.delta.y)
-                        elementToResize.preferredHeight -= eventData.delta.y;
+                delta = side.SideDelta(delta);
+                elementToResize.preferredWidth += delta.x;
+                elementToResize.preferredHeight += delta.y;
+                if (elementToResize.preferredWidth <= 1) elementToResize.preferredWidth = 32;
             }
             else
             {
-                RectTransform rect = elementToResize.transform.parent.GetComponent<RectTransform>();
-                Vector2 delta = Vector2.zero;
-                if (side == Side.Left || side == Side.Right)
-                {
-                    if (side == Side.Left)
-                        delta = new Vector2(-eventData.delta.x / 2, 0);
-
-
-                    if (side == Side.Right)
-                        delta = new Vector2(+eventData.delta.x / 2, 0);
-
-
-
-
-
-
-                }
-                if (side == Side.Top)
-                {
-                    delta = new Vector2(0, +eventData.delta.y / 2);
-
-
-
-                }
-                if (side == Side.Bottom)
-                {
-                    delta = new Vector2(0, -eventData.delta.y / 2);
-                }
-
-
-
-                rect.sizeDelta = rect.sizeDelta + delta;
-
-                if (side == Side.Right)
-                {
-                    delta *= -1;
-                }
-                rect.anchoredPosition = rect.anchoredPosition - delta / 2;
-                //elementToResize.preferredWidth += eventData.delta.x / 2;
-                if (rect.sizeDelta.x < 50) rect.sizeDelta = new Vector2(50, rect.sizeDelta.y);
-                if (rect.sizeDelta.y < 50) rect.sizeDelta = new Vector2(rect.sizeDelta.x, 50);
+                targetRect.SetPivot(side.GetPivot());
+                targetRect.sizeDelta = targetRect.sizeDelta + side.SideDelta(delta);
+                while (targetRect.rect.width < minRectWidth)
+                    targetRect.sizeDelta += Vector2.right * 5;
+                while (targetRect.rect.height < minRectHeight)
+                    targetRect.sizeDelta += Vector2.up * 5;
             }
         }
         public void OnPointerEnter(PointerEventData eventData)
         {
+            Debug.Log("pointerneterd " + name, gameObject);
             if (enableDrag && !columnMode && elementToResize != null)
                 Cursor.SetCursor(hoverCursor, cursorCenter, CursorMode.Auto);
             savedColor = image.color;
             image.color = new Color(savedColor.r, savedColor.g, savedColor.b, savedColor.a * alphaMultiplier);
-            if (LayoutTopControl.draggedItem != null)
+            if (LayoutTopControl.draggedItem != null && LayoutTopControl.draggedItem.transform.parent != transform.parent)
             {
                 if (!isHorizontal)
                 {
@@ -422,23 +307,25 @@ namespace zUI
                     image.color = dropTargetColor;
                 }
             }
-            Redraw();
+            SetSize();
+
         }
         public void OnPointerExit(PointerEventData eventData)
         {
-            if (LayoutTopControl.draggedItem != null)
-            {
-                if (LayoutDropTarget.currentTargetObject == gameObject)
-                {
-                    LayoutDropTarget.currentTargetObject = null;
-
-                }
-            }
+            if (LayoutTopControl.draggedItem != null && LayoutDropTarget.currentTargetObject == gameObject)
+                LayoutDropTarget.currentTargetObject = null;
             image.color = savedColor;
-            Redraw();
+            SetSize();
             Cursor.SetCursor(null, cursorCenter, CursorMode.Auto);
-            image.color = savedColor;
         }
+#if UNITY_EDITOR
+        [ExposeMethodInEditor]
+        void ManageVisibility()
+        {
+            LayoutBorderHide bh = transform.parent.gameObject.AddOrGetComponent<LayoutBorderHide>();
+            UnityEditor.Selection.activeGameObject = bh.gameObject;
+        }
+#endif
 
     }
 
