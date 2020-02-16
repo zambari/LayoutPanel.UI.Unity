@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using LayoutPanelDependencies;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -54,7 +55,7 @@ namespace zUI
 
 
 
-            if (name.Contains(LayoutPanel.spacerName)) name = "Item " + zExt.RandomString(4);
+            if (name.Contains(LayoutPanel.spacerName)) name = "Item " + LayoutExt.RandomString(4);
             AddBordersOnly();
             var fold = gameObject.AddOrGetComponent<LayoutFoldController>();
             if (fold.foldButton == null)
@@ -68,7 +69,7 @@ namespace zUI
             group.SetChildControl(2);
             Fold(group);
             content = gameObject.AddImageChild().AddOrGetComponent<LayoutElement>();
-            content.minHeight = LayoutTopControl.topHeight;
+            content.minHeight = LayoutPanel.topHeight;
             content.minWidth = 26;
             content.flexibleWidth = 0.001f;
             content.GetComponent<Image>().enabled = false;

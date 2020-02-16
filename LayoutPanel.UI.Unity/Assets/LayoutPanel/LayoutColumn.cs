@@ -2,15 +2,30 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using LayoutPanelDependencies;
 namespace zUI
 {
     [RequireComponent(typeof(VerticalLayoutGroup))]
+    [ExecuteInEditMode]
     public class LayoutColumn : MonoBehaviour
     {
         public DrawInspectorBg draw;
         public LayoutElement spacer;
-
-
+        VerticalLayoutGroup group;
+        void OnEnable()
+        {
+            LayoutPanel.onBorderSizeChange += UpdateBorder;
+            UpdateBorder();
+        }
+        void OnDisable()
+        {
+            LayoutPanel.onBorderSizeChange -= UpdateBorder;
+        }
+        void UpdateBorder()
+        {
+            if (group == null) group = GetComponent<VerticalLayoutGroup>();
+            group.spacing = LayoutPanel.borderSize * 2+LayoutPanel.borderSpacing;
+        }
         void OnValidate()
         {
 
@@ -21,8 +36,8 @@ namespace zUI
         void Reset()
         {
             Rescan();
-            if (spacer==null) 
-           spacer= LayoutCreator.CreateSpacer(gameObject);
+            if (spacer == null)
+                spacer = LayoutCreator.CreateSpacer(gameObject);
         }
         public void NotifyOfChange(LayoutPanel source)
         {
@@ -57,7 +72,7 @@ namespace zUI
         {
             VerticalLayoutGroup verticalLayoutGroup = gameObject.AddOrGetComponent<VerticalLayoutGroup>();
             verticalLayoutGroup.SetChildControl();
-            verticalLayoutGroup.spacing = LayoutBorderDragger.borderSize * 3;
+            verticalLayoutGroup.spacing = LayoutPanel.borderSize * 3;
             int spacerIndex = -1;
             if (spacer == null)
                 FindSpacer();
@@ -88,9 +103,9 @@ namespace zUI
                     }
                 }
             }
-            else Debug.Log("nospacer");
+//            else Debug.Log("nospacer");
             gameObject.AddOrGetComponent<VerticalLayoutGroup>().SetChildControl();
-            gameObject.AddOrGetComponent<VerticalLayoutGroup>().spacing = LayoutBorderDragger.borderSize * 3;
+            gameObject.AddOrGetComponent<VerticalLayoutGroup>().spacing = LayoutPanel.borderSize * 3;
         }
     }
 }

@@ -4,9 +4,10 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using LayoutPanelDependencies;
 namespace zUI
 {
-   public interface IDropTarget
+    public interface IDropTarget
     {
         int targetDropIndex { get; }
         Transform dropTarget { get; }
@@ -15,29 +16,47 @@ namespace zUI
         string name { get; }
     }
 
-	public static class LayoutDropTarget
-	{
-		public static GameObject currentTargetObject;
-		public static IDropTarget currentTarget {get { if (currentTargetObject==null) return null; else return currentTargetObject.GetComponent<IDropTarget>();}}
-	}
+
+    public static class LayoutDropTarget
+    {
+        public static GameObject currentTargetObject;
+        public static IDropTarget currentTarget { get { if (currentTargetObject == null) return null; else return currentTargetObject.GetComponent<IDropTarget>(); } }
+    }
 
     [RequireComponent(typeof(LayoutElement))]
     [ExecuteInEditMode]
-    public class LayoutBorderDragger : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IDragHandler, IBeginDragHandler, IDropTarget
+    public class LayoutBorderDragger : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IDragHandler, IBeginDragHandler, IEndDragHandler, IDropTarget
     {
+
         public DrawInspectorBg draw;
         public bool columnMode;
         public static string baseName { get { return "[BRDR]"; } }
         bool positionOutside = true;
+        LayoutPanel panel;
+        public bool freeResizeMode { get { return panel.freeMode; } }
+        //[HideInInspector] 
+        public VerticalLayoutGroup groupToDisableWhenDragging;
         [SerializeField]
         protected Texture2D hoverCursor;
         public static Color dropTargetColor { get { return new Color(0.2f, 1, 0.2f, 0.9f); } }
         public enum Side { Left, Right, Top, Bottom };
         [SerializeField] Side _side;
-        LayoutPanel panel;
-        static int _borderSize = 6;
+        [ReadOnly] [SerializeField] bool customElementToModify;
+
+        LayoutFoldController foldController;
+        Color savedColor;
+
+        [HideInInspector] [SerializeField] bool sideInside;
+        RectTransform rect { get { if (_rect == null) _rect = GetComponent<RectTransform>(); return _rect; } }
+        RectTransform _rect;
+        Image image { get { if (_image == null) _image = GetComponent<Image>(); return _image; } }
+        Image _image;
+        public bool isHorizontal { get { return side == Side.Left || side == Side.Right; } }
+        public static Vector2 cursorCenter { get { return Vector2.one * 16; } }
         const float columnModeOffset = 3f;
         bool isFolded;
+        static float alphaMultiplier = 1.5f;
+        float columnMulit = 1.3f;
         public bool enableDrag
         {
             get
@@ -53,16 +72,7 @@ namespace zUI
                 return true;
             }
         }
-        public static int borderSize
-        {
-            get { return _borderSize; }
-            set
-            {
-                _borderSize = value;
-                if (redraw != null) redraw();
-            }
-        }
-        static System.Action redraw;
+
         [SerializeField] bool sideStrechToBottomCorner = true;
 
         public LayoutElement elementToResize
@@ -82,25 +92,26 @@ namespace zUI
                 return panel.GetTargetTransformForSide(side);
             }
         }
-        [ReadOnly] [SerializeField] bool customElementToModify;
 
-        LayoutFoldController foldController;
-        Color savedColor;
-
-        [HideInInspector] [SerializeField] bool sideInside;
-        RectTransform rect { get { if (_rect == null) _rect = GetComponent<RectTransform>(); return _rect; } }
-        RectTransform _rect;
-        Image image { get { if (_image == null) _image = GetComponent<Image>(); return _image; } }
-        Image _image;
-        public bool isHorizontal { get { return side == Side.Left || side == Side.Right; } }
-        public static Vector2 cursorCenter { get { return Vector2.one * 16; } }
+        void Start()
+        {
+            ScrollRect scroll = transform.parent.GetComponentInChildren<ScrollRect>();
+            if (scroll != null)
+            {
+                if (scroll.content != null)
+                {
+                    VerticalLayoutGroup vertical = scroll.content.GetComponentInChildren<VerticalLayoutGroup>();
+                    if (vertical != null) groupToDisableWhenDragging = vertical;
+                }
+            }
+        }
         public Side side
         {
             get { return _side; }
             set
             {
                 Vector3 newAnchoredPosition = Vector3.zero; ;
-                float border = columnMode ? 1.1f * borderSize : borderSize;
+                float border = columnMode ? 1.1f * LayoutPanel.borderSize : LayoutPanel.borderSize;
                 _side = value;
                 if (_side == Side.Left)
                 {
@@ -134,7 +145,7 @@ namespace zUI
                     if (columnMode)
                     {
                         rect.pivot = new Vector2(0.5f, .5f);
-                        rect.sizeDelta = new Vector2(border * 2, border * 2);
+                        rect.sizeDelta = new Vector2(border * columnMulit, border * columnMulit);
                     }
                     else
                         rect.sizeDelta = new Vector2(0, border);
@@ -147,7 +158,7 @@ namespace zUI
                     if (columnMode)
                     {
                         rect.pivot = new Vector2(0.5f, .5f);
-                        rect.sizeDelta = new Vector2(border * 2, border * 2);
+                        rect.sizeDelta = new Vector2(border * columnMulit, border * columnMulit);
                     }
                     else
                         rect.sizeDelta = new Vector2(0, border);
@@ -161,14 +172,14 @@ namespace zUI
                 {
                     if (_side == Side.Top)
                     {
-                        newAnchoredPosition += new Vector3(0, borderSize * columnModeOffset);
+                        newAnchoredPosition += new Vector3(0, LayoutPanel.borderSize * columnModeOffset);
                     }
                     if (_side == Side.Bottom)
                     {
-                        newAnchoredPosition += new Vector3(0, -borderSize * columnModeOffset);
+                        newAnchoredPosition += new Vector3(0, -LayoutPanel.borderSize * columnModeOffset);
                     }
                 }
-                name = LayoutBorderDragger.baseName +" " + _side + " dragger";
+                name = LayoutBorderDragger.baseName + " " + _side + " dragger";
                 rect.anchoredPosition = newAnchoredPosition;
                 GetCursor();
             }
@@ -199,18 +210,18 @@ namespace zUI
             else
                 hoverCursor = zResourceLoader.vertialCursor;
         }
-      
 
         void OnValidate()
         {
             GetCursor();
             GetTargets();
             Redraw();
-          
+
             //  GetTargetElement();
         }
         void Redraw()
-        {   var le = gameObject.AddOrGetComponent<LayoutElement>();
+        {
+            var le = gameObject.AddOrGetComponent<LayoutElement>();
             if (le != null) le.ignoreLayout = true;
             side = side;
         }
@@ -221,7 +232,7 @@ namespace zUI
         }
         void OnEnable()
         {
-            redraw += Redraw;
+            LayoutPanel.onBorderSizeChange += Redraw;
             Redraw();
             GetTargets();
             foldController = GetComponentInParent<LayoutFoldController>();
@@ -240,7 +251,7 @@ namespace zUI
         }
         void OnDisable()
         {
-            redraw -= Redraw;
+            LayoutPanel.onBorderSizeChange -= Redraw;
             if (foldController != null)
                 foldController.onFold -= OnFoldToggle;
         }
@@ -251,9 +262,15 @@ namespace zUI
             {
                 Debug.Log("did not find elementToResize");
             }
+            if (groupToDisableWhenDragging != null) groupToDisableWhenDragging.enabled = false;
             if (hoverCursor == null) GetCursor();
         }
 
+        public void OnEndDrag(PointerEventData eventData)
+        {
+            if (groupToDisableWhenDragging != null) groupToDisableWhenDragging.enabled = true;
+
+        }
         public void OnDrag(PointerEventData eventData)
         {
             if (!enableDrag) return;
@@ -262,28 +279,75 @@ namespace zUI
                 Debug.Log("sorry, no target element");
                 return;
             }
-
-            if (side == Side.Left || side == Side.Right)
+            if (!freeResizeMode)
             {
-                if (side == Side.Left)
-                    elementToResize.preferredWidth -= eventData.delta.x / 2;
+                if (side == Side.Left || side == Side.Right)
+                {
+                    if (side == Side.Left)
+                        elementToResize.preferredWidth -= eventData.delta.x / 2;
+
+                    if (side == Side.Right)
+                        elementToResize.preferredWidth += eventData.delta.x / 2;
+                    if (elementToResize.preferredWidth <= 1) elementToResize.preferredWidth = 32;
+
+                }
+                if (side == Side.Top)
+                    elementToResize.preferredHeight += eventData.delta.y;
+                if (side == Side.Bottom)
+                    if (elementToResize.preferredHeight > eventData.delta.y)
+                        elementToResize.preferredHeight -= eventData.delta.y;
+            }
+            else
+            {
+                RectTransform rect = elementToResize.GetComponent<RectTransform>();
+                Vector2 delta = Vector2.zero;
+                if (side == Side.Left || side == Side.Right)
+                {
+                    if (side == Side.Left)
+                        delta = new Vector2(-eventData.delta.x / 2, 0);
+
+
+                    if (side == Side.Right)
+                        delta = new Vector2(+eventData.delta.x / 2, 0);
+
+
+
+
+
+
+                }
+                if (side == Side.Top)
+                {
+                    delta = new Vector2(0, +eventData.delta.y / 2);
+
+
+
+                }
+                if (side == Side.Bottom)
+                {
+                    delta = new Vector2(0, -eventData.delta.y / 2);
+                }
+
+
+
+                rect.sizeDelta = rect.sizeDelta + delta;
 
                 if (side == Side.Right)
-                    elementToResize.preferredWidth += eventData.delta.x / 2;
-                if (elementToResize.preferredWidth <= 1) elementToResize.preferredWidth = 32;
-
+                {
+                    delta *= -1;
+                }
+                rect.anchoredPosition = rect.anchoredPosition - delta / 2;
+                //elementToResize.preferredWidth += eventData.delta.x / 2;
+                if (rect.sizeDelta.x < 50) rect.sizeDelta = new Vector2(50, rect.sizeDelta.y);
+                if (rect.sizeDelta.y < 50) rect.sizeDelta = new Vector2(rect.sizeDelta.x, 50);
             }
-            if (side == Side.Top)
-                elementToResize.preferredHeight += eventData.delta.y;
-            if (side == Side.Bottom)
-                if (elementToResize.preferredHeight > eventData.delta.y)
-                    elementToResize.preferredHeight -= eventData.delta.y;
         }
         public void OnPointerEnter(PointerEventData eventData)
         {
             if (enableDrag && !columnMode && elementToResize != null)
                 Cursor.SetCursor(hoverCursor, cursorCenter, CursorMode.Auto);
             savedColor = image.color;
+            image.color = new Color(savedColor.r, savedColor.g, savedColor.b, savedColor.a * alphaMultiplier);
             if (LayoutTopControl.draggedItem != null)
             {
                 if (!isHorizontal)
@@ -301,9 +365,10 @@ namespace zUI
                 if (LayoutDropTarget.currentTargetObject == gameObject)
                 {
                     LayoutDropTarget.currentTargetObject = null;
-                    image.color = savedColor;
+
                 }
             }
+            image.color = savedColor;
             Redraw();
             Cursor.SetCursor(null, cursorCenter, CursorMode.Auto);
             image.color = savedColor;

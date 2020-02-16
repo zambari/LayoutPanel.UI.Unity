@@ -1,14 +1,13 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using LayoutPanelDependencies;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
-namespace zUI
-{
+using zUI;
     // [RequireComponent(typeof(LayoutElement))]
-    [System.Serializable]
+   
     [SelectionBase]
-    public class DrawInspectorBg { }
     public class LayoutPanel : MonoBehaviour
     {
         public DrawInspectorBg draw;
@@ -18,6 +17,7 @@ namespace zUI
         public static string spacerName { get { return "---"; } }
         public Text labelText;
         public LayoutElement resizableElement;
+        public bool freeMode;
         public string panelName
         {
             get { return _panelName; }
@@ -38,6 +38,7 @@ namespace zUI
 
                     labelText.SetText(value);
                 _panelName = value;
+                name = value;
             }
         }
         [SerializeField] string _panelName;
@@ -49,11 +50,61 @@ namespace zUI
             else transform.SetAsLastSibling();
         }
         void Start()
-        {
+        {   
+           
             OnValidate();
         }
+        public static int borderSpacing
+        {
+            get { return __borderSpacing; }
+            set
+            {
+                __borderSpacing = value;
+                if (onBorderSizeChange != null) onBorderSizeChange();
+            }
+        }
+
+
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+        static int __borderSpacing = 2;
+#else
+        static int __borderSpacing = 1;
+#endif
+
+        public static int verticalSpacing
+        {
+            get { return _verticalSpacing; }
+            set
+            {
+                _verticalSpacing = value;
+                if (onBorderSizeChange != null) onBorderSizeChange();
+            }
+        }
+        static int _verticalSpacing = 1;
+        public static int borderSize
+        {
+            get { return _borderSize; }
+            set
+            {
+                _borderSize = value;
+                if (onBorderSizeChange != null) onBorderSizeChange();
+            }
+        }
+        static int _topHeight = 25;
+        //static int _topHeight = 9;
+        public static int topHeight { get { return _topHeight; } set { _topHeight = value; if (onBorderSizeChange != null) onBorderSizeChange.Invoke(); } }
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+        static int _borderSize = 4;
+#else
+        static int _borderSize = 4;
+#endif
+        public static System.Action
+        onBorderSizeChange;
         void OnValidate()
         {
+     //      gameObject.AddOrGetComponent<PanelSaverHelper>();
             if (string.IsNullOrEmpty(_panelName)) _panelName = name;
             panelName = _panelName;
             if (resizableElement == null)
@@ -72,14 +123,15 @@ namespace zUI
             if (group != null)
             {
                 var padding = group.padding;
-                if (padding.top < LayoutTopControl.topHeight)
+                if (padding.top < LayoutPanel.topHeight)
                 {
-                    padding.top = LayoutTopControl.topHeight;
+                    padding.top = LayoutPanel.topHeight;
                     group.padding = padding;
                 }
             }
 
         }
+    
         public Transform GetTargetTransformForSide(LayoutBorderDragger.Side side)
         {
             if (transform.parent == null) return transform;
@@ -92,7 +144,7 @@ namespace zUI
             // else
             return resizableElement;
         }
-        
+
         void Reset()
         {
             string _panelName = name;
@@ -105,4 +157,3 @@ namespace zUI
                 c.NotifyOfChange(this);
         }
     }
-}

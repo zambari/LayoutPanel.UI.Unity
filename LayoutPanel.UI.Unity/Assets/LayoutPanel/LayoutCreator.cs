@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using LayoutPanelDependencies;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -20,27 +21,28 @@ namespace zUI
         public int maxItemsBottom = 2;
         public Color startColor = new Color(0, 0.408f, 0.945f, 0.559f);
         public Color endColor = new Color(0.000f, 0.851f, 0.302f, 0.578f);
-         public Color textColor = Color.white * 0.8f;
+        public Color textColor = Color.white * 0.8f;
         public Color topColor = Color.white * 0.4f;
         float flexHeight = 0.2f;
         float flexWidth = 0.02f;
         public bool leaveLastColumnEmpty = true;
-
 
         [ExposeMethodInEditor]
         public void CreateSetup()
         {
             if (columns < 2) columns = 2;
             var columnParentRect = LayoutEditorUtilities.CreateHoritontalOrVertical(GetComponent<RectTransform>(), LayoutEditorUtilities.LayoutDirection.Horizontal, columns, 0.01f);
-            columnParentRect.sizeDelta = new Vector2(-2 * LayoutBorderDragger.borderSize, -6 * LayoutBorderDragger.borderSize);
+            columnParentRect.sizeDelta = new Vector2(-2 * LayoutPanel.borderSize, -6 * LayoutPanel.borderSize);
             var layoutGroup = columnParentRect.GetComponent<HorizontalLayoutGroup>();
+            layoutGroup.AddOrGetComponent<LayoutHorizontalController>();
+
             layoutGroup.GetComponent<Image>().enabled = false;
-            layoutGroup.spacing = LayoutBorderDragger.borderSize * 3;
+            layoutGroup.spacing = LayoutPanel.borderSize * 3;
             var padding = layoutGroup.padding;
-            padding.top = LayoutBorderDragger.borderSize * 2;
-            padding.left = LayoutBorderDragger.borderSize;
-            padding.bottom = LayoutBorderDragger.borderSize * 2;
-            padding.right = LayoutBorderDragger.borderSize;
+            padding.top = LayoutPanel.borderSize * 2;
+            padding.left = LayoutPanel.borderSize;
+            padding.bottom = LayoutPanel.borderSize * 2;
+            padding.right = LayoutPanel.borderSize;
             layoutGroup.padding = padding;
             List<LayoutPanel> panels = new List<LayoutPanel>();
             for (int i = 0; i < columnParentRect.childCount; i++)
@@ -51,7 +53,7 @@ namespace zUI
                 thisColumn.AddComponent<LayoutBorderHide>();
                 thisColumn.GetComponent<Image>().enabled = false;
                 if (i < columnParentRect.childCount - 1 || !leaveLastColumnEmpty) AddRandomChildren(thisColumn.gameObject, Random.Range(1, maxItemsTop), ref panels);
-                CreateSpacer(thisColumn.gameObject,flexWidth,flexWidth);
+                CreateSpacer(thisColumn.gameObject, flexWidth, flexWidth);
                 if (i < columnParentRect.childCount - 1 || !leaveLastColumnEmpty) AddRandomChildren(thisColumn.gameObject, Random.Range(0, maxItemsBottom), ref panels);
                 thisColumn.AddOrGetComponent<LayoutColumn>();
             }
@@ -59,6 +61,8 @@ namespace zUI
             SetColors(panels);
             UpdateBorders();
         }
+
+
         void UpdateBorders()
         {
             var borders = gameObject.GetComponentsInChildren<LayoutBorderDragger>();
@@ -67,10 +71,9 @@ namespace zUI
         void AddRandomChildren(GameObject parent, int count, ref List<LayoutPanel> panels)
         {
             for (int j = 0; j < count; j++)
-                panels.Add(CreatePanel(parent, "Item [" + (panels.Count + 1) + " ] " + zExt.RandomString(3)));
+                panels.Add(CreatePanel(parent, "Item [" + (panels.Count + 1) + " ] " + zExtensionPrimitives.RandomString(3)));
 
         }
-
 
         void SetColors(List<LayoutPanel> panels)
         {
@@ -84,7 +87,7 @@ namespace zUI
                 img.color = Color.Lerp(startColor, endColor, 1 - (float)i / panels.Count);
             }
         }
-       public static LayoutElement CreateSpacer(GameObject thisChild, float flexWidth=0.2f, float flexHeight=0.2f)
+        public static LayoutElement CreateSpacer(GameObject thisChild, float flexWidth = 0.2f, float flexHeight = 0.2f)
         {
             var img = thisChild.AddChildRectTransform();
             var le = img.gameObject.AddComponent<LayoutElement>();
@@ -104,13 +107,12 @@ namespace zUI
 
             var panel = creator.GetComponent<LayoutPanel>();
             var contentle = panel.resizableElement;
-            #if UNITY_EDITOR
-                var canvasrend=panel.GetComponent<CanvasRenderer>();
-                
+#if UNITY_EDITOR
+            var canvasrend = panel.GetComponent<CanvasRenderer>();
 
-            #endif
+#endif
 
-            contentle.preferredHeight = Random.Range(LayoutTopControl.topHeight, LayoutTopControl.topHeight * 5);
+            contentle.preferredHeight = Random.Range(LayoutPanel.topHeight, LayoutPanel.topHeight * 5);
             creator.RemoveMe();
             thisGrandChild.transform.SetParent(parent.transform);
             return panel;
@@ -148,7 +150,7 @@ namespace zUI
 #if UNITY_EDITOR
                 Undo.DestroyObjectImmediate(transform.GetChild(i).gameObject);
 #else
-                DestroyImmediate(transform.GetChild(i).gameObject);
+            DestroyImmediate (transform.GetChild (i).gameObject);
 #endif
         }
         //         [ExposeMethodInEditor]

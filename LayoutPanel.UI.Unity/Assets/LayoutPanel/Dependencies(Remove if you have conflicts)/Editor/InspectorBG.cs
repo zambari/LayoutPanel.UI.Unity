@@ -1,9 +1,8 @@
-﻿using System.Collections;
+﻿
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using LayoutPanelDependencies;
-
-
+namespace LayoutPanelDependencies {
 #if UNITY_EDITOR
 using UnityEditor;
 namespace zUI
@@ -11,17 +10,6 @@ namespace zUI
     [CustomPropertyDrawer(typeof(DrawInspectorBg))]
     public class DrawInspectorBgDDrawer : PropertyDrawer
     {
-        public static Texture2D bgTexture
-        {
-            get
-            {
-                // comment this line to read textures every time (for checing out new textures)
-                      if (_bgTexture == null)  
-                _bgTexture = Resources.Load("stripebg") as Texture2D;
-                return _bgTexture;
-            }
-        }
-
         static Texture2D _bgTexture;
         public static void DrawBG()
         {
@@ -40,6 +28,15 @@ namespace zUI
                         GUI.DrawTextureWithTexCoords(new Rect(rect.x + x, rect.y + y, texture.width, texture.height), texture, new Rect(0f, 0f, 1f, 1f));
             }
         }
+        public static Texture2D bgTexture
+        {
+            get
+            {
+                if (_bgTexture == null)
+                    _bgTexture = Resources.Load("stripebg") as Texture2D;
+                return _bgTexture;
+            }
+        }
 
         public override void OnGUI(Rect rect, SerializedProperty property, GUIContent label)
         {
@@ -55,6 +52,7 @@ namespace zUI
             return 0;
         }
     }
+}
 }
 
 #endif
