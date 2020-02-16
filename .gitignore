@@ -28,3 +28,5 @@ obj/
 *.user
 *.unityproj
 *.booproj
+
+LayoutPanel.UI.Unity/.vscode/

@@ -30,7 +30,7 @@ namespace zUI
 
         public DrawInspectorBg draw;
         public bool columnMode;
-        public static string baseName { get { return "[BRDR]"; } }
+        public static string baseName { get { return "[Panel]"; } }
         bool positionOutside = true;
         LayoutPanel panel;
         public bool freeResizeMode { get { return panel.freeMode; } }
@@ -39,8 +39,9 @@ namespace zUI
         [SerializeField]
         protected Texture2D hoverCursor;
         public static Color dropTargetColor { get { return new Color(0.2f, 1, 0.2f, 0.9f); } }
-        public enum Side { Left, Right, Top, Bottom };
+        public enum Side { Top, Left , Right, Bottom}; //reordered for inspector unicodes
         [SerializeField] Side _side;
+
         [ReadOnly] [SerializeField] bool customElementToModify;
 
         LayoutFoldController foldController;
@@ -73,6 +74,66 @@ namespace zUI
             }
         }
 
+
+        string sideStringDouble
+        {
+            get
+            {
+                switch (_side)
+                {
+                    case Side.Left: return "⇇";
+                    case Side.Right: return "⇉";
+                    case Side.Top: return "⇈";
+                    case Side.Bottom: return "⇊";
+
+                }
+                return null;
+            }
+        }
+
+
+        string sideStringHollow
+        {
+            get
+            {
+                switch (_side)
+                {
+                    case Side.Left: return "⇦";
+                    case Side.Right: return "⇨";
+                    case Side.Top: return "⇧";
+                    case Side.Bottom: return "⇩";
+
+                }
+                return null;
+            }
+        }
+        string sideString
+        {
+            get
+            {
+                switch (_side)
+                {
+                    case Side.Top: return "┌═══┐"; //"╒═══╕";
+                    case Side.Left: return "╠──   ";//"╠═──   ";
+
+                    case Side.Right: return "   ──╣";//"  ──═╣";
+
+                    case Side.Bottom: return "┕═══┙";// "╘═══╛";
+
+                }
+                return null;
+            }
+        }
+
+        string sideStringFour
+        {
+            get
+            {
+                string n = sideString;
+                return n + n + n + n;
+
+            }
+        }
         [SerializeField] bool sideStrechToBottomCorner = true;
 
         public LayoutElement elementToResize
@@ -179,7 +240,8 @@ namespace zUI
                         newAnchoredPosition += new Vector3(0, -LayoutPanel.borderSize * columnModeOffset);
                     }
                 }
-                name = LayoutBorderDragger.baseName + " " + _side + " dragger";
+                //name = LayoutBorderDragger.baseName + " " + _side + " dragger";
+                name = sideString;
                 rect.anchoredPosition = newAnchoredPosition;
                 GetCursor();
             }
@@ -257,7 +319,11 @@ namespace zUI
         }
         public void OnBeginDrag(PointerEventData eventData)
         {
-            if (!enableDrag) return;
+            if (!enableDrag)
+            {
+                //                Debug.Log("dragging not enabled");
+                return;
+            }
             if (elementToResize == null)
             {
                 Debug.Log("did not find elementToResize");
@@ -299,7 +365,7 @@ namespace zUI
             }
             else
             {
-                RectTransform rect = elementToResize.GetComponent<RectTransform>();
+                RectTransform rect = elementToResize.transform.parent.GetComponent<RectTransform>();
                 Vector2 delta = Vector2.zero;
                 if (side == Side.Left || side == Side.Right)
                 {

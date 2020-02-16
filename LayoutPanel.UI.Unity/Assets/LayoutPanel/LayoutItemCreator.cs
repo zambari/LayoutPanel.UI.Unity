@@ -57,6 +57,12 @@ namespace zUI
 
             if (name.Contains(LayoutPanel.spacerName)) name = "Item " + LayoutExt.RandomString(4);
             AddBordersOnly();
+            RectTransform rect = gameObject.AddOrGetComponent<RectTransform>();
+            float w = rect.rect.width;
+            float h = rect.rect.height;
+            rect.anchorMin = Vector2.one / 2;
+            rect.anchorMax = Vector2.one / 2;
+            rect.sizeDelta = new Vector2(h, w);
             var fold = gameObject.AddOrGetComponent<LayoutFoldController>();
             if (fold.foldButton == null)
             {
@@ -86,13 +92,30 @@ namespace zUI
             var panel = gameObject.AddOrGetComponent<LayoutPanel>();
             if (panel.resizableElement == null)
                 panel.resizableElement = content;
-
-
+            if (panel.GetComponentInParent<LayoutColumn>() == null)
+            {
+                panel.freeMode = true;
+            }
+            RemoveMe();
         }
 
         [ExposeMethodInEditor]
         public void AddBordersOnly()
-        {
+        {   //top
+        
+            topControl = GetComponentInChildren<LayoutTopControl>();
+            if (topControl == null)
+            {
+                var topImage = gameObject.AddImageChild();
+                topControl = topImage.gameObject.AddOrGetComponent<LayoutTopControl>();
+                if (layoutCreator != null)
+                {
+                    topImage.color = layoutCreator.topColor;
+                }
+
+            }
+
+            // borders
             int count = System.Enum.GetNames(typeof(LayoutBorderDragger.Side)).Length;
             for (int i = 0; i < count; i++)
             {
@@ -116,17 +139,7 @@ namespace zUI
 #endif
 
             }
-            topControl = GetComponentInChildren<LayoutTopControl>();
-            if (topControl == null)
-            {
-                var topImage = gameObject.AddImageChild();
-                topControl = topImage.gameObject.AddOrGetComponent<LayoutTopControl>();
-                if (layoutCreator != null)
-                {
-                    topImage.color = layoutCreator.topColor;
-                }
 
-            }
             Text labelText = topControl.GetComponentInChildren<Text>();
 
             if (labelText == null)

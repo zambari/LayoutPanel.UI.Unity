@@ -108,7 +108,9 @@ namespace zUI
         {
 
             if (!isActiveAndEnabled) return;
-            name = LayoutBorderDragger.baseName + " Top Handle";
+            //name = LayoutBorderDragger.baseName + " Top Handle";
+            name = "┌╢  ╟┐" ; 
+            
             UpdateSize();
             var rect = GetComponent<RectTransform>();
             rect.anchorMin = new Vector2(0f, 1f);
