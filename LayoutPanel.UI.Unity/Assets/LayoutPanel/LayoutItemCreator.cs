@@ -7,22 +7,23 @@ using LayoutPanelDependencies;
 using UnityEditor;
 #endif
 using UnityEngine.UI;
+using Z;
 namespace zUI
 {
 
 
-
+    [DisallowMultipleComponent]
     [ExecuteInEditMode]
     public class LayoutItemCreator : MonoBehaviour
     {
         public DrawInspectorBg draw;
-        [SerializeField] LayoutTopControl topControl;
+        [HideInInspector] [SerializeField] LayoutTopControl topControl;
 
-        [SerializeField] LayoutPanel panel;
-        [SerializeField] LayoutFoldController foldController;
-        [SerializeField] Button foldButton;
-        [SerializeField] LayoutElement content;
-        [SerializeField] LayoutBorderHide layoutBorderHide;
+        [HideInInspector] [SerializeField] LayoutPanel panel;
+        [HideInInspector] [SerializeField] LayoutFoldController foldController;
+        [HideInInspector] [SerializeField] Button foldButton;
+        [HideInInspector] [SerializeField] LayoutElement content;
+        [HideInInspector] [SerializeField] LayoutBorderHide layoutBorderHide;
 
         public LayoutBorderHide.BorderHideMode borderHideMode;
         [Header("If present will text raycast catcher")]
@@ -30,12 +31,20 @@ namespace zUI
         Color textColor = Color.white * 0.8f;
         LayoutCreator layoutCreator;
         public static Font font { get { return Resources.GetBuiltinResource<Font>("Arial.ttf"); } }
-        public bool bordersPlacedInside;
-        public bool removeMeWhenDone = true;
+        public bool bordersPlacedInside = true;
+        public bool removeMeWhenDone = false;
+        public bool removeMeNow = false;
 
+        [SerializeField]
+        [HideInInspector]
+        LayoutNameHelper nameHelper;
+        [Range(2, 5)]
+        public int subdivideCount = 2;
         void OnValidate()
         {
             TryToGetReferences();
+            if (removeMeNow)
+                RemoveMe();
         }
 
         void TryToGetReferences()
@@ -48,14 +57,34 @@ namespace zUI
         }
         void Reset()
         {
+
+            // Debug.Log("reset");
+
+            var allcoponents = gameObject.GetComponents<Component>();
+            int thispos = 0;
+            for (int i = 0; i < allcoponents.Length; i++)
+            {
+                if (allcoponents[i] == this) thispos = i;
+            }
+            this.MoveComponent(-thispos);
+
             RandomizeColor();
+            subdivideCount = 2 + Random.Range(0, 2);//';//' + Random.value > 0.8f ? 1 : 0;
+            UpdateNameHelper();
         }
 
+
+        void OnEnable()
+        {
+
+            UpdateNameHelper();
+            // NameTagHandling(showDepth);
+        }
 
         void RandomizeColor()
         {
             Image image = GetComponent<Image>();
-            if (image != null)
+            if (image != null && image.color == Color.white)
             {
                 Undo.RegisterCompleteObjectUndo(image, "color");
                 Color color = (Color.black + new Color(0, Random.value * .2f, 0) + Color.white * 0.4f);// Color.white * 0.2f).Randomize(1,1,.3f);
@@ -90,19 +119,45 @@ namespace zUI
             topControl.transform.SetAsFirstSibling();
         }
 
+        void UpdateNameHelper()
+        {
+            if (nameHelper == null) nameHelper = gameObject.AddOrGetComponent<LayoutNameHelper>();
+            nameHelper.UpdateName();
+        }
+        [ExposeMethodInEditor]
+        public void SubDivdeLayout()
+        {
+            Image image = GetComponent<Image>();
+            if (image != null) image.enabled = false;
+
+            var n = gameObject.AddOrGetComponent<LayoutNameHelper>();
+            var hg = transform.parent.GetComponent<HorizontalLayoutGroup>();
+            var vg = transform.parent.GetComponent<VerticalLayoutGroup>();
+
+            bool horizontal = vg != null;
+
+
+            var subs = gameObject.SplitToLayout(horizontal, subdivideCount);
+            // if (horizontal) gameObject.AddOrGetComponent<LayoutRow>();
+            // else
+            //     gameObject.AddOrGetComponent<LayoutColumn>();
+            // NameTagHandling(showDepth);
+            foreach (var g in subs)
+                g.AddComponent<LayoutItemCreator>();
+
+            Selection.objects = subs.ToArray();
+#if UNITY_EDITOR
+            EditorApplication.delayCall += () => { if (nameHelper != null) nameHelper.UpdateName(); };
+#else
+            UpdateNameHelper();
+#endif
+            RemoveMe();
+        }
+
         [ExposeMethodInEditor]
         public void AddBordersOnly()
-        {   //top
+        {
             layoutBorderHide = gameObject.AddOrGetComponent<LayoutBorderHide>();
-            //             layoutBorderHide = gameObject.GetComponent<LayoutBorderHide>();
-            //             if (layoutBorderHide == null)
-            //             {
-            //                 layoutBorderHide = gameObject.AddComponent<LayoutBorderHide>();
-
-            // #if UNITY_EDITOR
-            //                 Undo.RegisterCreatedObjectUndo(layoutBorderHide, "content");
-            // #endif
-            //             }
 
             layoutBorderHide.borderColor = layoutBorderHide.borderColor.Randomize(01f, 1f, 0.2f);
 
@@ -115,7 +170,7 @@ namespace zUI
                 var thisChild = gameObject.AddImageChild();
                 thisChild.transform.SetAsFirstSibling();
                 var d = thisChild.gameObject.AddOrGetComponent<LayoutBorderDragger>();
-                d.bordersPlacedInside=bordersPlacedInside;
+                d.bordersPlacedInside = bordersPlacedInside;
                 if (borderOverScan > 0)
                     HandleTextRaycastCatchers(thisChild.gameObject);
 
@@ -124,7 +179,134 @@ namespace zUI
                 Undo.RegisterCreatedObjectUndo(thisChild.gameObject, "borders");
 #endif
             }
+            UpdateNameHelper(); ;
 
+        }
+
+        public bool addRandomTexstOnCreate = true;
+        [ExposeMethodInEditor]
+        public void ConvertToLayoutPanel()
+        {
+            if (name.Contains(LayoutPanel.spacerName))
+                name = "Item " + LayoutExt.RandomString(4);
+            AddBordersOnly();
+            AddTop();
+            HandleContent();
+            HandleThisObject();
+            HandleTopLabel();
+            var rect = GetComponent<RectTransform>();
+            Fold(rect);
+            TryToGetReferences();
+            if (addRandomTexstOnCreate)
+                AddRandomTexts();
+            UpdateNameHelper();
+
+        }
+        static int randCount;
+        [ExposeMethodInEditor]
+        void AddRandomTexts()
+        {
+            for (int i = 0; i < Random.Range(3, 9); i++)
+            {
+                var t = gameObject.AddTextChild();
+                t.gameObject.name = "RND " + randCount;
+                randCount++;
+                string k = "";
+                for (int j = 0; j < Random.Range(3, 6); j++) k += zExt.RandomString(Random.Range(3, 8)) + " ";
+                t.text = k;
+                t.fontSize = Random.Range(10, 30);
+                t.color = new Color(Random.value, Random.value, Random.value);
+            }
+
+#if UNITY_EDITOR
+            if (Selection.activeGameObject == gameObject)
+                EditorGUIUtility.PingObject(content);
+            //Selection.activeObject = content;
+            RemoveMe();
+#endif
+        }
+
+
+
+
+        public void RemoveMe()
+        {
+            if (!removeMeWhenDone) return;
+#if UNITY_EDITOR
+            EditorApplication.delayCall += () =>
+            {
+                if (this != null)
+                {
+                    if (nameHelper != null)
+                    {
+                        EditorApplication.delayCall += () => { if (nameHelper != null) nameHelper.UpdateName(); };
+                    }
+                    Undo.DestroyObjectImmediate(this);
+
+                }
+            };
+#endif
+        }
+        void Fold(Component c)
+        {
+#if UNITY_EDITOR
+            UnityEditorInternal.InternalEditorUtility.SetIsInspectorExpanded(c, false);
+#endif
+        }
+        Button CreateFoldButton()
+        {
+            var foldButton = topControl.gameObject.AddImageChild().gameObject;
+            if (foldButton == null) return null;
+            var button = foldButton.AddOrGetComponent<Button>();
+
+            //Click on the console to see dump for <color=green>btnRect</color> (copy to cliboard and paste in code):
+            RectTransform btnRect = foldButton.GetComponent<RectTransform>();
+            btnRect.anchorMin = new Vector2(1f, 0.5f);
+            btnRect.anchorMax = new Vector2(1f, 0.5f);
+            btnRect.anchoredPosition = new Vector2(-3.109955f, 0f);
+            btnRect.sizeDelta = new Vector2(10f, 10f);
+            btnRect.pivot = new Vector2(1f, 0.5f);
+
+            button.GetComponent<Image>().enabled = false;
+            var text = btnRect.gameObject.AddTextChild(LayoutFoldController.labelUnfolded);
+            text.alignment = TextAnchor.MiddleCenter;
+            var textRect = text.GetComponent<RectTransform>(); ;
+            textRect.offsetMax = Vector2.zero;
+            textRect.offsetMin = Vector2.zero;
+            text.color = textColor;
+            textRect.sizeDelta = new Vector2(14, 14);
+            text.name = "FoldIndicatorText";
+            text.font = font;
+            return button;
+        }
+#if UNITY_EDITOR
+
+        [ExposeMethodInEditor]
+        void RemoveBorders()
+        {
+            var panel = GetComponent<LayoutPanel>();
+            if (panel != null)
+            {
+                if (panel.resizableElement != null)
+                    Undo.DestroyObjectImmediate(panel.resizableElement.gameObject);
+                Undo.DestroyObjectImmediate(panel);
+            }
+            var bh = GetComponent<LayoutBorderHide>();
+
+            if (bh != null)
+            {
+                bh.borderHideMode = LayoutBorderHide.BorderHideMode.Visible;
+                Undo.DestroyObjectImmediate(bh);
+            }
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+
+                var thisChild = transform.GetChild(i);
+                if (thisChild.GetComponent<LayoutTopControl>() != null || thisChild.GetComponent<LayoutBorderDragger>() != null)
+                {
+                    Undo.DestroyObjectImmediate(thisChild.gameObject);
+                }
+            }
 
         }
 
@@ -144,7 +326,7 @@ namespace zUI
             Text labelText = null;//panel.labelText; ;//= topControl.GetComponentInChildren<Text>();
             if (labelText == null)
             {
-//                Debug.Log("creating text", gameObject);
+                //                Debug.Log("creating text", gameObject);
                 labelText = topControl.gameObject.AddTextChild();
                 labelText.name = "Panel Label";
                 labelText.text = name;
@@ -185,7 +367,7 @@ namespace zUI
             foldStatusText.name = "FoldStatusText";
             fold.foldLabelText = foldStatusText;
             Fold(fold);
-            foldStatusText.text=fold.GetFoldString();
+            foldStatusText.text = fold.GetFoldString();
             VerticalLayoutGroup group = gameObject.AddOrGetComponent<VerticalLayoutGroup>();
             group.SetChildControl(2);
             Fold(group);
@@ -200,104 +382,13 @@ namespace zUI
             Undo.RegisterCreatedObjectUndo(content.gameObject, "content");
 #endif
 
-            content.minHeight = LayoutPanel.topHeight;
+            content.minHeight = LayoutSettings.topHeight;
             content.minWidth = 26;
             content.flexibleWidth = 0.001f;
             content.GetComponent<Image>().enabled = false;
             content.name = "CONTENT";
             Fold(content);
         }
-        [ExposeMethodInEditor]
-        public void ConvertToLayoutPanel()
-        {
-            if (name.Contains(LayoutPanel.spacerName))
-                name = "Item " + LayoutExt.RandomString(4);
-            AddBordersOnly();
-            AddTop();
-            HandleContent();
-            HandleThisObject();
-            HandleTopLabel();
-            Fold(GetComponent<RectTransform>());
-            TryToGetReferences();
-
-            // if (panel.GetComponentInParent<LayoutColumn>() == null)
-            // {
-            //     Debug.Log("Set freemode");
-            //     panel.freeMode = true;
-            // }
-
-#if UNITY_EDITOR
-            if (Selection.activeGameObject == gameObject)
-                EditorGUIUtility.PingObject(content);
-            //Selection.activeObject = content;
-            if (removeMeWhenDone) EditorApplication.delayCall += () => EditorApplication.delayCall += () => { if (this != null) Undo.DestroyObjectImmediate(this); };
-#endif
-        }
-
-
-
-        [ExposeMethodInEditor]
-        public void RemoveMe()
-        {
-#if UNITY_EDITOR
-            Undo.DestroyObjectImmediate(this);
-#endif
-        }
-        void Fold(Component c)
-        {
-#if UNITY_EDITOR
-            UnityEditorInternal.InternalEditorUtility.SetIsInspectorExpanded(c, false);
-#endif
-        }
-        Button CreateFoldButton()
-        {
-            var foldButton = topControl.gameObject.AddImageChild().gameObject;
-            if (foldButton == null) return null;
-            var button = foldButton.AddOrGetComponent<Button>();
-
-            //Click on the console to see dump for <color=green>btnRect</color> (copy to cliboard and paste in code):
-            RectTransform btnRect = foldButton.GetComponent<RectTransform>();
-            btnRect.anchorMin = new Vector2(1f, 0.5f);
-            btnRect.anchorMax = new Vector2(1f, 0.5f);
-            btnRect.anchoredPosition = new Vector2(-3.109955f, 0f);
-            btnRect.sizeDelta = new Vector2(10f, 10f);
-            btnRect.pivot = new Vector2(1f, 0.5f);
-
-            button.GetComponent<Image>().enabled = false;
-            var text = btnRect.gameObject.AddTextChild(LayoutFoldController.labelUnfolded);
-            text.alignment = TextAnchor.MiddleCenter;
-            var textRect = text.GetComponent<RectTransform>(); ;
-            textRect.offsetMax = Vector2.zero;
-            textRect.offsetMin = Vector2.zero;
-            text.color = textColor;
-            textRect.sizeDelta = new Vector2(14, 14);
-            text.name = "FoldIndicatorText";
-            text.font = font;
-            return button;
-        }
-#if UNITY_EDITOR
-
-        [ExposeMethodInEditor]
-        void RemoveBorders()
-        {
-            var bh = GetComponent<LayoutBorderHide>();
-            if (bh != null)
-            {
-                bh.borderHideMode = LayoutBorderHide.BorderHideMode.Visible;
-                Undo.DestroyObjectImmediate(bh);
-            }
-            for (int i = transform.childCount - 1; i >= 0; i--)
-            {
-
-                var thisChild = transform.GetChild(i);
-                if (thisChild.GetComponent<LayoutTopControl>() != null || thisChild.GetComponent<LayoutBorderDragger>() != null)
-                {
-                    Undo.DestroyObjectImmediate(thisChild.gameObject);
-                }
-            }
-
-        }
-
 #endif
 
     }

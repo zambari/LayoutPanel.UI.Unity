@@ -22,7 +22,6 @@ namespace zUI
         [ClickableEnum]
         [SerializeField]
         BorderHideMode _borderHideMode;
-
         public bool applyToAllChildren;
         [SerializeField] bool _editColors;
         public bool editColors

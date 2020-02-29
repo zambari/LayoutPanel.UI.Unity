@@ -85,19 +85,19 @@ namespace LayoutPanelDependencies
 
 
 
-    public static string RandomString(int length)
-    {
-        const string pool = "abcdefghijklmnopqrstuvwxyz0123456789";
-        var builder = new System.Text.StringBuilder();
-
-        for (var i = 0; i < length; i++)
+        public static string RandomString(int length)
         {
-            var c = pool[UnityEngine.Random.Range(0, pool.Length - 1)];
-            builder.Append(c);
-        }
+            const string pool = "abcdefghijklmnopqrstuvwxyz0123456789";
+            var builder = new System.Text.StringBuilder();
 
-        return builder.ToString();
-    }
+            for (var i = 0; i < length; i++)
+            {
+                var c = pool[UnityEngine.Random.Range(0, pool.Length - 1)];
+                builder.Append(c);
+            }
+
+            return builder.ToString();
+        }
 
         public static Color Random(this Color c)
         {
@@ -385,11 +385,23 @@ namespace LayoutPanelDependencies
                 return r.rect.height;
             else return -1;
         }
+        public static void CopyLayoutElementFrom(this LayoutElement target, LayoutElement source)
+        {
+            target.minHeight = source.minHeight;
+            target.minWidth = source.minWidth;
+            target.preferredWidth = source.preferredWidth;
+            target.preferredHeight = source.preferredHeight;
+            target.flexibleWidth = source.flexibleWidth;
+            target.flexibleHeight = source.flexibleHeight;
+            target.ignoreLayout = source.ignoreLayout;
+            target.layoutPriority=source.layoutPriority;
+        }
+
         public static void SetChildControl(this HorizontalLayoutGroup layout, float spacing = 0)
 
         {
             if (layout == null) return;
-            layout.childForceExpandHeight = false;
+            layout.childForceExpandHeight = true;
             layout.childForceExpandWidth = false;
             layout.childControlHeight = true;
             layout.childControlWidth = true;
@@ -401,7 +413,7 @@ namespace LayoutPanelDependencies
         {
             if (layout == null) return;
             layout.childForceExpandHeight = false;
-            layout.childForceExpandWidth = false;
+            layout.childForceExpandWidth = true;
             layout.childControlHeight = true;
             layout.childControlWidth = true;
             layout.spacing = spacing;
@@ -529,7 +541,7 @@ namespace LayoutPanelDependencies
                 Debug.Log("no parent");
                 return;
             }
-//            RectTransform parentRect = rect.parent.GetComponent<RectTransform>();
+            //            RectTransform parentRect = rect.parent.GetComponent<RectTransform>();
             rect.anchorMin = new Vector2(margin, margin);
             rect.anchorMax = new Vector2(1 - margin, 1 - margin);
             rect.offsetMin = Vector2.zero;

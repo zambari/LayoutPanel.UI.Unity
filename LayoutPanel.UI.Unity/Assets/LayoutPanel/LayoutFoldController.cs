@@ -76,16 +76,16 @@ public class LayoutFoldController : MonoBehaviour
         if (layoutElement != null)
         {
             layoutElement.flexibleHeight = -1;
-            layoutElement.minHeight = LayoutPanel.topHeight;
+            layoutElement.minHeight = LayoutSettings.topHeight;
         }
     }
     void OnEnable()
     {
-        LayoutPanel.onBorderSizeChange += UpdateSize;
+        LayoutSettings.onBorderSizeChange += UpdateSize;
     }
     void OnDisable()
     {
-        LayoutPanel.onBorderSizeChange -= UpdateSize;
+        LayoutSettings.onBorderSizeChange -= UpdateSize;
     }
     void Start()
     {

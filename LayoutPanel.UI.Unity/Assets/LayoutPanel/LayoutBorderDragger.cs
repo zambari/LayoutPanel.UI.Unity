@@ -7,29 +7,6 @@ using UnityEngine.UI;
 using LayoutPanelDependencies;
 namespace zUI
 {
-    public interface IDropTarget
-    {
-        int targetDropIndex { get; }
-        Transform dropTarget { get; }
-        Transform transform { get; }
-        GameObject gameObject { get; }
-        bool isHorizontal {get;}
-        string name { get; }
-    }
-
-
-    public static class LayoutDropTarget
-    {
-        public static GameObject currentTargetObject;
-        public static IDropTarget currentTarget
-        {
-            get
-            {
-                if (currentTargetObject == null) return null;
-                else return currentTargetObject.GetComponent<IDropTarget>();
-            }
-        }
-    }
 
     [RequireComponent(typeof(LayoutElement))]
     [ExecuteInEditMode]
@@ -38,8 +15,6 @@ namespace zUI
 
         public DrawInspectorBg draw;
 
-        int minRectWidth = 50; // won't allow scaling lower than that
-        int minRectHeight = 30; // won't allow scaling lower than that
         public bool columnMode;
         public static string baseName { get { return "[Panel]"; } }
         LayoutPanel panel;
@@ -48,20 +23,17 @@ namespace zUI
             get
             {
                 if (panel == null) return true;
-                return panel.freeMode;
+                return panel.detachedMode;
             }
         }
         //[HideInInspector] 
         public VerticalLayoutGroup groupToDisableWhenDragging;
         [SerializeField]
         protected Texture2D hoverCursor;
-        public static Color dropTargetColor { get { return new Color(0.2f, 1, 0.2f, 0.9f); } }
-
         [SerializeField] Side _side;
 
         LayoutFoldController foldController;
         Color savedColor;
-
 
         [SerializeField] public bool bordersPlacedInside;
         RectTransform rect { get { if (_rect == null) _rect = GetComponent<RectTransform>(); return _rect; } }
@@ -70,7 +42,7 @@ namespace zUI
         Image _image;
         public bool isHorizontal { get { return side == Side.Left || side == Side.Right; } }
         public static Vector2 cursorCenter { get { return Vector2.one * 16; } }
-        const float columnModeOffset = 3f;
+
         bool isFolded;
         static float alphaMultiplier = 1.5f;
         RectTransform targetRect;
@@ -83,11 +55,19 @@ namespace zUI
                 if (panel == null) panel = GetComponentInParent<LayoutPanel>();
                 if (panel != null)
                 {
-                    if (panel.freeMode) return true;
-                    if (side == Side.Top) return panel.isAlignedBottom;
-                    if (side == Side.Bottom) return !panel.isAlignedBottom;
+                    if (panel.detachedMode) return true;
+                   // if (side == Side.Top) return panel.isAlignedBottom;
+                   // if (side == Side.Bottom) return !panel.isAlignedBottom;
                 }
                 return true;
+            }
+        }
+        public bool isPanelHorizontal
+        {
+            get
+            {
+                if (panel == null) return false;
+                return panel.isInHorizontalGroup;
             }
         }
 
@@ -127,10 +107,8 @@ namespace zUI
 
         void SetSize()
         {
-            float border = columnMode ? 1.1f * LayoutPanel.borderSize : LayoutPanel.borderSize;
+            float border = columnMode ? 1.1f * LayoutSettings.borderSize : LayoutSettings.borderSize;
             Vector2 newSize = side.isHorizontal() ? new Vector2(border, 0) : new Vector2(bordersPlacedInside ? -2 : 2 * border, border);
-
-
             if (LayoutTopControl.draggedItem != null && LayoutDropTarget.currentTargetObject == gameObject)
             {
                 if (isHorizontal) newSize.x += border; else newSize.y += border;
@@ -143,8 +121,6 @@ namespace zUI
             get { return _side; }
             set
             {
-
-
                 Vector3 newAnchoredPosition = Vector3.zero;
                 _side = value;
                 rect.anchorMin = _side.GetAnchorMin();
@@ -152,16 +128,13 @@ namespace zUI
                 rect.pivot = _side.GetPivot(bordersPlacedInside);
 
                 rect.anchoredPosition = Vector2.zero;
-
+                name = side.GetObjectLabel();
                 if (columnMode)
                 {
                     if (_side == Side.Top)
-                        newAnchoredPosition += new Vector3(0, LayoutPanel.borderSize * columnModeOffset);
+                        newAnchoredPosition += new Vector3(0, LayoutSettings.borderSizeColumnOffset);
                     if (_side == Side.Bottom)
-                        newAnchoredPosition += new Vector3(0, -LayoutPanel.borderSize * columnModeOffset);
-                    //  if
-                    //name = LayoutBorderDragger.baseName + " " + _side + " dragger";
-                    name = side.GetObjectLabel();
+                        newAnchoredPosition += new Vector3(0, -LayoutSettings.borderSizeColumnOffset);
                     rect.anchoredPosition = newAnchoredPosition;
                     GetCursor();
                 }
@@ -184,6 +157,7 @@ namespace zUI
                 return thissib;
             }
         }
+        public bool isHorizontalBar { get { return isHorizontal; } }
 
         void GetCursor()
         {
@@ -205,12 +179,13 @@ namespace zUI
 
         void GetTargets()
         {
+            name = side.GetObjectLabel();
             if (panel == null) panel = GetComponentInParent<LayoutPanel>();
             //   enableDrag = (elementToResize != null);
         }
         void OnEnable()
         {
-            LayoutPanel.onBorderSizeChange += SetSize;
+            LayoutSettings.onBorderSizeChange += SetSize;
             SetSize();
             GetTargets();
             foldController = GetComponentInParent<LayoutFoldController>();
@@ -233,14 +208,17 @@ namespace zUI
         }
         void OnDisable()
         {
-            LayoutPanel.onBorderSizeChange -= SetSize;
+            LayoutSettings.onBorderSizeChange -= SetSize;
             if (foldController != null)
                 foldController.onFold -= OnFoldToggle;
         }
         public void OnBeginDrag(PointerEventData eventData)
         {
             if (!enableDrag)
+            {
+                Debug.Log("drag not enabled");
                 return;
+            }
 
             if (groupToDisableWhenDragging != null) groupToDisableWhenDragging.enabled = false;
             if (hoverCursor == null) GetCursor();
@@ -255,9 +233,43 @@ namespace zUI
                 {
                     Debug.Log("did not find elementToResize");
                 }
+                // if (isHorizontal)
+                // {
+                //     if (elementToResize.preferredWidth == -1)
+                //         elementToResize.preferredWidth =  GetActualWidth(elementToResize.GetComponent<RectTransform>()); //hahha
+                // }
+                // else
+                // {
+                //     if (elementToResize.preferredHeight == -1)
+                //         elementToResize.preferredHeight = GetActualHeight(elementToResize.GetComponent<RectTransform>());//hahha
+
+                // }  
+                if (isHorizontal)
+                {
+                    if (elementToResize.preferredWidth == -1)
+                        elementToResize.preferredWidth = elementToResize.GetComponent<RectTransform>().rect.width/3; //hahha
+                }
+                else
+                {
+                    if (elementToResize.preferredHeight == -1)
+                        elementToResize.preferredHeight = elementToResize.GetComponent<RectTransform>().rect.height/3;//hahha
+
+                }
             }
         }
+static Vector3[] corners = new Vector3[4];
+        float GetActualWidth(RectTransform rect)
+        {
+            rect.GetWorldCorners(corners);
+            return Mathf.Abs(corners[0].x-corners[2].x);
 
+        }
+        float GetActualHeight(RectTransform rect)
+        {
+            rect.GetWorldCorners(corners);
+            return Mathf.Abs(corners[0].y-corners[1].y);
+
+        }
         public void OnEndDrag(PointerEventData eventData)
         {
             if (groupToDisableWhenDragging != null) groupToDisableWhenDragging.enabled = true;
@@ -287,25 +299,42 @@ namespace zUI
             {
                 targetRect.SetPivot(side.GetPivot());
                 targetRect.sizeDelta = targetRect.sizeDelta + side.SideDelta(delta);
-                while (targetRect.rect.width < minRectWidth)
+                while (targetRect.rect.width < LayoutSettings.minRectWidth)
                     targetRect.sizeDelta += Vector2.right * 5;
-                while (targetRect.rect.height < minRectHeight)
+                while (targetRect.rect.height < LayoutSettings.minRectHeight)
                     targetRect.sizeDelta += Vector2.up * 5;
             }
         }
         public void OnPointerEnter(PointerEventData eventData)
         {
-      //      Debug.Log("pointerneterd " + name, gameObject);
+            //      Debug.Log("pointerneterd " + name, gameObject);
             if (enableDrag && !columnMode && elementToResize != null)
                 Cursor.SetCursor(hoverCursor, cursorCenter, CursorMode.Auto);
             savedColor = image.color;
             image.color = new Color(savedColor.r, savedColor.g, savedColor.b, savedColor.a * alphaMultiplier);
             if (LayoutTopControl.draggedItem != null && LayoutTopControl.draggedItem.transform.parent != transform.parent)
             {
-               if (!isHorizontal)
+                // if (panel!=null)
+                // if (panel.isInHorizontalGroup && isHorizontal)
+                // {
+
+                // }
+                // if (panel.isInVerticalGroup)
+                // if (!isHorizontal)
                 {
                     LayoutDropTarget.currentTargetObject = gameObject;
-                    image.color = dropTargetColor;
+                    if (panel != null)
+                    {
+                        if ((panel.isInHorizontalGroup && !isHorizontal) ||
+                        (panel.isInVerticalGroup && isHorizontal))
+                            image.color = LayoutSettings.dropTargetColorWhenSplit;
+                        else
+                            image.color = LayoutSettings.dropTargetColor;
+                    }
+                    else
+                    {
+                        Debug.Log("no panel");
+                    }
                 }
             }
             SetSize();
@@ -329,6 +358,5 @@ namespace zUI
 #endif
 
     }
-
 
 }

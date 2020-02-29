@@ -9,26 +9,32 @@ namespace zUI
 
     //v.02 canvas scalefactor
 
+    /// <summary>
+    /// Mainly handles panel dragging
+    /// </summary>
+
     [ExecuteInEditMode]
-    public class LayoutTopControl : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHandler, IPointerClickHandler
+    public class LayoutTopControl : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHandler, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
     {
         public DrawInspectorBg draw;
-
         Canvas canvas;
         RectTransform rectToModify;
         public static LayoutTopControl draggedItem;
         public bool dragEnabled = true;
-        public bool freeDrag { get { return panel.freeMode; } }
+
         int savedSibilingIndex;
         LayoutPanel panel;
         Transform savedParent;
+        float dragOpacity = 0.4f;
 
-        float dragOpacity = 0.3f;
         float lastClickTime;
         float timeToDubleCick = 0.5f;
         bool wasIgnore;
-        bool savedFreeDragState;
+        Color savedColor;
+        Image image;
+        LayoutElement le;
 
+        static Color pointerOverColor = new Color(0.15f, 0.15f, 0.15f, 0.15f);
         public void OnPointerClick(PointerEventData e)
         {
             if (Time.unscaledTime - lastClickTime < timeToDubleCick)
@@ -38,7 +44,6 @@ namespace zUI
             }
             lastClickTime = Time.unscaledTime;
         }
-        LayoutElement le;
 
         public void OnBeginDrag(PointerEventData e)
         {
@@ -62,14 +67,13 @@ namespace zUI
             }
 
             draggedItem = this;
-            if (!freeDrag)
+            if (!panel.detachedMode)
             {
                 panel.AddOrGetComponent<CanvasGroup>().blocksRaycasts = false;
                 panel.AddOrGetComponent<CanvasGroup>().alpha = dragOpacity;
-                panel.PlaceDropTarget(canvas.transform, -1);
+                panel.PlaceTemporary(canvas.transform, -1);
             }
-            savedFreeDragState = panel.freeMode;
-            panel.freeMode = true; /// !!!11
+            panel.isBeingDragged = true;
             Cursor.SetCursor(zResourceLoader.panCursor, LayoutBorderDragger.cursorCenter, CursorMode.Auto);
         }
         public void OnDrag(PointerEventData e)
@@ -88,10 +92,7 @@ namespace zUI
             var currentpos = rectToModify.localPosition;
             currentpos += new Vector3(e.delta.x / canvas.scaleFactor, e.delta.y / canvas.scaleFactor, 0);
             rectToModify.localPosition = currentpos;
-            if (LayoutDropTarget.currentTarget != null)
-            {
-                // Debug.Log(LayoutDropTarget.currentTarget.name);
-            }
+
         }
 
         public void OnEndDrag(PointerEventData e)
@@ -99,11 +100,11 @@ namespace zUI
             if (!dragEnabled) return;
             panel.AddOrGetComponent<CanvasGroup>().blocksRaycasts = true;
             panel.gameObject.AddOrGetComponent<CanvasGroup>().alpha = 1;
-             panel.freeMode = savedFreeDragState;
-           
-            if (!freeDrag)
+            //  panel.detachedMode = savedFreeDragState;
+            panel.isBeingDragged = false;
+            if (!panel.detachedMode)
             {
-                Debug.Log("was non freedrag");
+                // Debug.Log("was non freedrag");
                 if (LayoutDropTarget.currentTarget != null)
                 {
                     Debug.Log("current target was " + LayoutDropTarget.currentTarget.name);
@@ -112,7 +113,7 @@ namespace zUI
                 else
                 {
                     Debug.Log("was no target");
-                    panel.PlaceDropTarget(savedParent, savedSibilingIndex);
+                    panel.PlaceTemporary(savedParent, savedSibilingIndex);
                 }
                 var ll = panel.GetComponent<LayoutElement>();
                 if (ll != null) ll.ignoreLayout = wasIgnore;
@@ -129,40 +130,56 @@ namespace zUI
         {
             if (panel == null) panel = GetComponentInParent<LayoutPanel>();
             OnValidate();
+
         }
         void OnValidate()
         {
-
+            UpdateSize();
             if (!isActiveAndEnabled) return;
             name = "┌─╢  ╟─┐";
 
-            UpdateSize();
-            var rect = GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0f, 1f);
-            rect.anchorMax = new Vector2(1f, 1f);
-            rect.anchoredPosition = new Vector2(0f, 0f);
-            rect.sizeDelta = new Vector2(0f, 20f);
-            rect.pivot = new Vector2(0f, 1f);
+
 
         }
         void UpdateSize()
         {
             if (le == null) le = gameObject.AddOrGetComponent<LayoutElement>();
             le.ignoreLayout = false;
-            le.minHeight = LayoutPanel.topHeight;
+            le.minHeight = LayoutSettings.topHeight;
             le.flexibleWidth = 0.001f;
-            le.minWidth = LayoutPanel.topHeight * 2;
-            le.preferredWidth = LayoutPanel.topHeight * 2;
+            le.minWidth = LayoutSettings.topHeight * 2;
+            le.preferredWidth = LayoutSettings.topHeight * 2;
+
+            var rect = GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.anchoredPosition = new Vector2(0f, 0f);
+            rect.sizeDelta = new Vector2(2 * LayoutSettings.internalGroupPadding, 2 * LayoutSettings.topHeight + LayoutSettings.internalGroupPadding);
+            rect.pivot = new Vector2(0f, 1f);
         }
 
         void OnEnable()
         {
-            LayoutPanel.onBorderSizeChange += UpdateSize;
+            LayoutSettings.onBorderSizeChange += UpdateSize;
+            UpdateSize();
         }
         void OnDisable()
         {
-            LayoutPanel.onBorderSizeChange -= UpdateSize;
+            LayoutSettings.onBorderSizeChange -= UpdateSize;
 
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            if (image == null)
+                image = GetComponent<Image>();
+            savedColor = image.color;
+            image.color = savedColor + pointerOverColor;
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            image.color = savedColor;
         }
     }
 

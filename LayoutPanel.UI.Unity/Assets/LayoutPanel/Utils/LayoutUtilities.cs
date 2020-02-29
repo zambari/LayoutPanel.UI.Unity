@@ -32,7 +32,90 @@ namespace zUI
         //     return rect;
         // }
 
+        public static Transform ClonePanel1(LayoutPanel src)
+        {
 
+            LayoutElement layoutElement = src.GetComponent<LayoutElement>();
+            Transform temp = new GameObject().transform;
+            temp.name=src.name+" CLONED";
+            var le=temp.gameObject.AddComponent<LayoutElement>();
+           // le.CopyLayoutElementFrom(layoutElement)
+            GameObject.Instantiate<LayoutElement>(layoutElement, temp);
+            temp.SetParent(src.transform.parent);
+            temp.SetSiblingIndex(src.transform.GetSiblingIndex());
+            Debug.Log("created obj", temp.gameObject);
+            return temp;
+        }
+
+
+        public static Transform ClonePanel(LayoutPanel src)
+        {
+            RectTransform tr = src.GetComponent<RectTransform>();
+            float w = tr.rect.width;
+            float h = tr.rect.height;
+            Transform temp = new GameObject().transform;
+            List<Transform> list = new List<Transform>();
+            for (int i = src.transform.childCount - 1; i >= 0; i--)
+            {
+                var thisT = src.transform.GetChild(i);
+                thisT.SetParent(temp.transform);
+                list.Add(thisT);
+            }
+            var clone = GameObject.Instantiate(src, src.transform.parent);
+            clone.name = src.name + " CLONE";
+            clone.transform.SetSiblingIndex(src.transform.GetSiblingIndex());
+            var le = clone.AddOrGetComponent<LayoutElement>();
+            le.preferredHeight = h;
+            le.preferredWidth = w;
+
+            Transform ret = clone.transform;
+            var img = ret.GetComponent<Image>();
+            if (img != null) img.enabled = false;
+            var vg = ret.GetComponent<VerticalLayoutGroup>();
+            if (vg != null)
+                UnityEditor.Undo.DestroyObjectImmediate(vg);
+            var hg = ret.GetComponent<HorizontalLayoutGroup>();
+            if (hg != null)
+                UnityEditor.Undo.DestroyObjectImmediate(hg);
+
+            var pn = ret.GetComponent<LayoutPanel>();
+            if (pn != null)
+                UnityEditor.Undo.DestroyObjectImmediate(pn);
+            var bh = ret.GetComponent<LayoutBorderHide>();
+            if (bh != null)
+                UnityEditor.Undo.DestroyObjectImmediate(bh);
+            var fc = ret.GetComponent<LayoutFoldController>();
+            if (fc != null)
+                UnityEditor.Undo.DestroyObjectImmediate(fc);
+
+            for (int i = list.Count - 1; i >= 0; i--)
+                list[i].SetParent(src.transform);
+
+            GameObject.DestroyImmediate(temp.gameObject);
+            return ret;
+        }
+
+        public static void SetChildControl(HorizontalLayoutGroup layout, float spacing = 0)
+
+        {
+            if (layout == null) return;
+            layout.childForceExpandHeight = false;
+            layout.childForceExpandWidth = false;
+            layout.childControlHeight = true;
+            layout.childControlWidth = true;
+            layout.spacing = spacing;
+        }
+
+        public static void SetChildControl(VerticalLayoutGroup layout, float spacing = 0)
+
+        {
+            if (layout == null) return;
+            layout.childForceExpandHeight = false;
+            layout.childForceExpandWidth = false;
+            layout.childControlHeight = true;
+            layout.childControlWidth = true;
+            layout.spacing = spacing;
+        }
 
         static Transform CreateCanvasIfNotPresent()
         {
@@ -140,27 +223,27 @@ namespace zUI
             // if (a != null) a.enabled = false;
 
         }
-        static RectTransform PopulateLayout(RectTransform container, LayoutDirection dir, int count, float flex = -2)
+        static  RectTransform PopulateLayout(RectTransform container, LayoutDirection dir, int count, float flex = -2)
         {
             bool vertical = dir == LayoutDirection.Vertical;
 
             if (vertical)
             {
-               var group=  container.gameObject.AddComponent<VerticalLayoutGroup>();
-               group .SetChildControl();
-               group.spacing=10;
+                var group = container.gameObject.AddComponent<VerticalLayoutGroup>();
+                group.SetChildControl();
+                group.spacing = 10;
             }
             else
             {
-               var group= container.gameObject.AddComponent<HorizontalLayoutGroup>();
-               group .SetChildControl();
-               group.spacing=10;
+                var group = container.gameObject.AddComponent<HorizontalLayoutGroup>();
+                group.SetChildControl();
+                group.spacing = 10;
             }
             List<GameObject> cretedObjects = new List<GameObject>();
             for (int i = 0; i < count; i++)
             {
                 RectTransform child = container.AddChild();
-                
+
 #if UNITY_EDITOR
 
                 Undo.RegisterCreatedObjectUndo(child, "layoutt");
