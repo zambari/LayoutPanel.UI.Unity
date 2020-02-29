@@ -5,15 +5,15 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using LayoutPanelDependencies;
-namespace zUI
+using zUI;
+
+namespace Z.LayoutPanel
 {
 
     [RequireComponent(typeof(LayoutElement))]
     [ExecuteInEditMode]
-    public class LayoutBorderDragger : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IDragHandler, IBeginDragHandler, IEndDragHandler, IDropTarget
+    public class LayoutBorderDragger : MonoBehaviourWithBg, IPointerEnterHandler, IPointerExitHandler, IDragHandler, IBeginDragHandler, IEndDragHandler, IDropTarget
     {
-
-        public DrawInspectorBg draw;
 
         public bool columnMode;
         public static string baseName { get { return "[Panel]"; } }
@@ -56,8 +56,8 @@ namespace zUI
                 if (panel != null)
                 {
                     if (panel.detachedMode) return true;
-                   // if (side == Side.Top) return panel.isAlignedBottom;
-                   // if (side == Side.Bottom) return !panel.isAlignedBottom;
+                    // if (side == Side.Top) return panel.isAlignedBottom;
+                    // if (side == Side.Bottom) return !panel.isAlignedBottom;
                 }
                 return true;
             }
@@ -108,10 +108,16 @@ namespace zUI
         void SetSize()
         {
             float border = columnMode ? 1.1f * LayoutSettings.borderSize : LayoutSettings.borderSize;
-            Vector2 newSize = side.isHorizontal() ? new Vector2(border, 0) : new Vector2(bordersPlacedInside ? -2 : 2 * border, border);
+            Vector2 newSize = Vector2.zero;
+
+            if (side.isHorizontal()) newSize = new Vector2(border, 0);
+            else
+            {
+                newSize = new Vector2((bordersPlacedInside ? -2 : 2 )* border, border);
+            }
             if (LayoutTopControl.draggedItem != null && LayoutDropTarget.currentTargetObject == gameObject)
             {
-                if (isHorizontal) newSize.x += border; else newSize.y += border;
+           //     if (isHorizontal) newSize.x += border; else newSize.y += border;
 
             }
             rect.sizeDelta = newSize;
@@ -232,42 +238,33 @@ namespace zUI
                 if (elementToResize == null)
                 {
                     Debug.Log("did not find elementToResize");
+                    return;
                 }
-                // if (isHorizontal)
-                // {
-                //     if (elementToResize.preferredWidth == -1)
-                //         elementToResize.preferredWidth =  GetActualWidth(elementToResize.GetComponent<RectTransform>()); //hahha
-                // }
-                // else
-                // {
-                //     if (elementToResize.preferredHeight == -1)
-                //         elementToResize.preferredHeight = GetActualHeight(elementToResize.GetComponent<RectTransform>());//hahha
 
-                // }  
                 if (isHorizontal)
                 {
                     if (elementToResize.preferredWidth == -1)
-                        elementToResize.preferredWidth = elementToResize.GetComponent<RectTransform>().rect.width/3; //hahha
+                        elementToResize.preferredWidth = elementToResize.GetComponent<RectTransform>().rect.width / 3; //hahha
                 }
                 else
                 {
                     if (elementToResize.preferredHeight == -1)
-                        elementToResize.preferredHeight = elementToResize.GetComponent<RectTransform>().rect.height/3;//hahha
+                        elementToResize.preferredHeight = elementToResize.GetComponent<RectTransform>().rect.height / 3;//hahha
 
                 }
             }
         }
-static Vector3[] corners = new Vector3[4];
+        static Vector3[] corners = new Vector3[4];
         float GetActualWidth(RectTransform rect)
         {
             rect.GetWorldCorners(corners);
-            return Mathf.Abs(corners[0].x-corners[2].x);
+            return Mathf.Abs(corners[0].x - corners[2].x);
 
         }
         float GetActualHeight(RectTransform rect)
         {
             rect.GetWorldCorners(corners);
-            return Mathf.Abs(corners[0].y-corners[1].y);
+            return Mathf.Abs(corners[0].y - corners[1].y);
 
         }
         public void OnEndDrag(PointerEventData eventData)

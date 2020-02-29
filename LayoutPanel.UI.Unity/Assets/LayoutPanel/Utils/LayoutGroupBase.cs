@@ -8,10 +8,9 @@ namespace zUI
     #if not
 
     [ExecuteInEditMode]
-    public abstract class LayoutGroupBase : MonoBehaviour
+    public abstract class LayoutGroupBase : MonoBehaviourWithBg
     {
-        public DrawInspectorBg draw;
-        public LayoutElement spacer;
+           public LayoutElement spacer;
         public virtual bool isHorizontal { get { return false; } }
 
         void OnEnable()

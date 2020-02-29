@@ -11,13 +11,13 @@ using Z;
 using UnityEditor;
 #endif
 using System.Linq;
-namespace zUI
+namespace Z.LayoutPanel
 {
     [DisallowMultipleComponent]
     [ExecuteInEditMode]
     public class LayoutBorderHide : MonoBehaviour
     {
-        public DrawInspectorBg draw;
+      
         public enum BorderHideMode { Visible, Hidden, TopOnly }
         [ClickableEnum]
         [SerializeField]

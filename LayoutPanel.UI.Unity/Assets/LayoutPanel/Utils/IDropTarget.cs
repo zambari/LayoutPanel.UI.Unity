@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-namespace zUI
+namespace Z.LayoutPanel
 {
     public interface IDropTarget
     {

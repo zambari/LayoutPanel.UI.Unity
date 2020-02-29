@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEngine.UI;
 namespace Z
 {
+    // v .02 
+    // remove all extension
     public static class NameUtils
     {
         public static readonly char defaultSeparator = (char)8198;// ' '; //set to something invisle
@@ -90,6 +92,10 @@ namespace Z
             separator = CheckPreSeparator(separator);
 
             return s.IndexOf(separator) >= 0;
+        }
+        public static string RemoveAllTags(this string s, char separator = '$')
+        {
+            return s.RemoveTag().RemovePreTag(); ;
         }
         public static string RemovePreTag(this string s, char separator = '$')
         {

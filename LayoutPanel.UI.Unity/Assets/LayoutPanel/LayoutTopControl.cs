@@ -4,7 +4,7 @@ using LayoutPanelDependencies;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-namespace zUI
+namespace Z.LayoutPanel
 {
 
     //v.02 canvas scalefactor
@@ -14,9 +14,9 @@ namespace zUI
     /// </summary>
 
     [ExecuteInEditMode]
-    public class LayoutTopControl : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHandler, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
+    public class LayoutTopControl : MonoBehaviourWithBg, IDragHandler, IBeginDragHandler, IEndDragHandler, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
     {
-        public DrawInspectorBg draw;
+   
         Canvas canvas;
         RectTransform rectToModify;
         public static LayoutTopControl draggedItem;
@@ -107,7 +107,7 @@ namespace zUI
                 // Debug.Log("was non freedrag");
                 if (LayoutDropTarget.currentTarget != null)
                 {
-                    Debug.Log("current target was " + LayoutDropTarget.currentTarget.name);
+                    // Debug.Log("current target was " + LayoutDropTarget.currentTarget.name);
                     panel.PlaceDropTarget(LayoutDropTarget.currentTarget.dropTarget, LayoutDropTarget.currentTarget.targetDropIndex);
                 }
                 else
@@ -122,7 +122,7 @@ namespace zUI
             {
                 Debug.Log("was freedrag");
             }
-            Debug.Log("ended drag");
+            // Debug.Log("ended drag");
             draggedItem = null;
             Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
         }

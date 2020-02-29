@@ -8,7 +8,7 @@ using UnityEditor;
 #endif
 using LayoutPanelDependencies;
 
-namespace zUI
+namespace Z.LayoutPanel
 {
 
     // v0.2  duzo dobrego

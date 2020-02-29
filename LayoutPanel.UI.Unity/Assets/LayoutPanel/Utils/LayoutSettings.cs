@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-namespace LayoutPanelDependencies
+namespace Z.LayoutPanel
 {
     public static class LayoutSettings
     {
@@ -24,9 +24,9 @@ namespace LayoutPanelDependencies
         // static int _verticalSpacing = 1;
         static int _topHeight = 25;
 #if UNITY_ANDROID && !UNITY_EDITOR
-        static int _borderSize =12;
+        static int _borderSize =9;
 #else
-        static int _borderSize = 9;
+        static int _borderSize = 7;
 
 #endif
         public static float borderSizeColumnOffset { get { return _borderSize * columnModeOffset; } } // set { _borderSize = value; if (onBorderSizeChange != null) onBorderSizeChange(); } }
@@ -36,9 +36,9 @@ namespace LayoutPanelDependencies
         {
             get
             {
-             //  var x = 2 * _borderSize + borderSpacing; ;
+                //  var x = 2 * _borderSize + borderSpacing; ;
                 return 5;
-              //  return x;
+                //  return x;
             }
             set
             {
@@ -54,10 +54,10 @@ namespace LayoutPanelDependencies
         public static int topHeight { get { return _topHeight; } set { _topHeight = value; if (onBorderSizeChange != null) onBorderSizeChange.Invoke(); } }
         public static int minWidth { get { return topHeight * 4; } }
         public static System.Action onBorderSizeChange;
-        public static int internalGroupPadding {get{return 5;}}
+        public static int internalGroupPadding { get { return 5; } }
         public static int groupPaddigNoPanel { get { return 0; } }
-        public static int groupPaddigPanel { get { return borderSize+internalGroupPadding; } }
-          static RectOffset GetRectOffset(LayoutPanel panel)
+        public static int groupPaddigPanel { get { return borderSize + internalGroupPadding; } }
+        static RectOffset GetRectOffset(LayoutPanel panel)
         {
             RectOffset padding = new RectOffset();
             int size = (panel == null) ? groupPaddigNoPanel : groupPaddigPanel;
@@ -67,12 +67,12 @@ namespace LayoutPanelDependencies
             padding.right = size;
             return padding;
         }
-        
+
         public static void SetPadding(this HorizontalLayoutGroup layoutGroup, LayoutPanel panel)
         {
             layoutGroup.padding = GetRectOffset(panel);
         }
-      
+
         public static void SetPadding(this VerticalLayoutGroup layoutGroup, LayoutPanel panel)
         {
 
@@ -108,14 +108,14 @@ namespace LayoutPanelDependencies
             layout.childControlWidth = true;
             layout.spacing = spacing;
         }
-        public static void SetParams(this HorizontalLayoutGroup group, LayoutPanel panel )
+        public static void SetParams(this HorizontalLayoutGroup group, LayoutPanel panel)
         {
             group.SetChildControlFromPanel();
 
             group.SetPadding(panel);
             group.SetSpacing();
         }
-        public static void SetParams(this VerticalLayoutGroup group, LayoutPanel panel )
+        public static void SetParams(this VerticalLayoutGroup group, LayoutPanel panel)
         {
             group.SetChildControlFromPanel();
             group.SetPadding(panel);
@@ -125,7 +125,7 @@ namespace LayoutPanelDependencies
 
         {
             if (layout == null) return;
-            layout.childForceExpandHeight = true;
+            layout.childForceExpandHeight = false; // ?
             layout.childForceExpandWidth = true;
             layout.childControlHeight = true;
             layout.childControlWidth = true;

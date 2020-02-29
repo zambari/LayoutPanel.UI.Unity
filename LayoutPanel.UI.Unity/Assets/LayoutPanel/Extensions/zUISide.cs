@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-namespace zUI
+namespace Z.LayoutPanel
 {
 
     public enum Side { Top, Left, Right, Bottom }; //reordered for inspector unicodes

@@ -8,17 +8,16 @@ using UnityEditor;
 #endif
 using UnityEngine.UI;
 using Z;
-namespace zUI
+namespace Z.LayoutPanel
 {
 
 
     [DisallowMultipleComponent]
     [ExecuteInEditMode]
-    public class LayoutItemCreator : MonoBehaviour
+    public class LayoutItemCreator : MonoBehaviourWithBg
     {
-        public DrawInspectorBg draw;
-        [HideInInspector] [SerializeField] LayoutTopControl topControl;
 
+        [HideInInspector] [SerializeField] LayoutTopControl topControl;
         [HideInInspector] [SerializeField] LayoutPanel panel;
         [HideInInspector] [SerializeField] LayoutFoldController foldController;
         [HideInInspector] [SerializeField] Button foldButton;
@@ -29,7 +28,7 @@ namespace zUI
         [Header("If present will text raycast catcher")]
         [SerializeField] float borderOverScan = 0;
         Color textColor = Color.white * 0.8f;
-        LayoutCreator layoutCreator;
+        LayoutCreatorAdvanced layoutCreator;
         public static Font font { get { return Resources.GetBuiltinResource<Font>("Arial.ttf"); } }
         public bool bordersPlacedInside = true;
         public bool removeMeWhenDone = false;
@@ -94,7 +93,7 @@ namespace zUI
         }
         void Awake()
         {
-            layoutCreator = GetComponentInParent<LayoutCreator>();
+            layoutCreator = GetComponentInParent<LayoutCreatorAdvanced>();
             if (layoutCreator != null)
             {
                 textColor = layoutCreator.textColor;
@@ -127,31 +126,35 @@ namespace zUI
         [ExposeMethodInEditor]
         public void SubDivdeLayout()
         {
+            _SubDivdeLayout(subdivideCount);
+        }
+        public List<LayoutItemCreator> _SubDivdeLayout(int count)
+        {
             Image image = GetComponent<Image>();
             if (image != null) image.enabled = false;
+            var list = new List<LayoutItemCreator>();
 
             var n = gameObject.AddOrGetComponent<LayoutNameHelper>();
             var hg = transform.parent.GetComponent<HorizontalLayoutGroup>();
             var vg = transform.parent.GetComponent<VerticalLayoutGroup>();
-
             bool horizontal = vg != null;
-
-
-            var subs = gameObject.SplitToLayout(horizontal, subdivideCount);
-            // if (horizontal) gameObject.AddOrGetComponent<LayoutRow>();
-            // else
-            //     gameObject.AddOrGetComponent<LayoutColumn>();
-            // NameTagHandling(showDepth);
+            var subs = gameObject.SplitToLayout(horizontal, count);
             foreach (var g in subs)
-                g.AddComponent<LayoutItemCreator>();
+            {
+                list.Add(g.AddComponent<LayoutItemCreator>());
+            }
+
+#if UNITY_EDITOR
+
 
             Selection.objects = subs.ToArray();
-#if UNITY_EDITOR
             EditorApplication.delayCall += () => { if (nameHelper != null) nameHelper.UpdateName(); };
 #else
             UpdateNameHelper();
 #endif
+
             RemoveMe();
+            return list;
         }
 
         [ExposeMethodInEditor]
@@ -183,7 +186,7 @@ namespace zUI
 
         }
 
-        public bool addRandomTexstOnCreate = true;
+        public bool addRandomTexstOnCreate = false;
         [ExposeMethodInEditor]
         public void ConvertToLayoutPanel()
         {
@@ -198,7 +201,15 @@ namespace zUI
             Fold(rect);
             TryToGetReferences();
             if (addRandomTexstOnCreate)
+            {
                 AddRandomTexts();
+                var content = transform.Find("CONTENT");
+                if (content != null)
+                {
+                    Debug.Log("destroying content");
+                    DestroyImmediate(content.gameObject);
+                }
+            }
             UpdateNameHelper();
 
         }
