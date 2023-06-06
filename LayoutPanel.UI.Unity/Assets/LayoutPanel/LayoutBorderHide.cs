@@ -1,10 +1,7 @@
-﻿
-
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using LayoutPanelDependencies;
 using Z;
 #if UNITY_EDITOR
 
@@ -17,125 +14,215 @@ namespace Z.LayoutPanel
     [ExecuteInEditMode]
     public class LayoutBorderHide : MonoBehaviour
     {
-      
-        public enum BorderHideMode { Visible, Hidden, TopOnly }
+
+        public enum BorderHideMode { Ignore, Visible, Hidden, TopOnly, HideAll, Clear }
+
         [ClickableEnum]
         [SerializeField]
         BorderHideMode _borderHideMode;
-        public bool applyToAllChildren;
-        [SerializeField] bool _editColors;
-        public bool editColors
-        {
-            get { return _editColors; }
-            set { _editColors = value; OnValidate(); }
-        }
-        public Color borderColor;
+        [SerializeField]
+        [HideInInspector]
+        BorderHideMode _lastHideMode;
+        // public bool applyToAllChildren;
+        // [SerializeField] bool _editColors;
+        [SerializeField] bool _alsoHideSCrollBars=true;
+        // public bool editColors
+        // {
+        //     get { return _editColors; }
+        //     set { _editColors = value; OnValidate(); }
+        // }
+        // public Color borderColor;
 
+        int hiddenCount = 0;
+
+      
         public BorderHideMode borderHideMode
         {
             get { return _borderHideMode; }
             set
             {
+
                 _borderHideMode = value;
-                int hiddenCount = 0;
-                if (applyToAllChildren)
-                {
-                    hiddenCount = SetBasedOnGetComponents();
-                }
-                else
-                    hiddenCount = SetBasedOnRoot(transform);
-                if (hiddenCount == 0) name = name.RemoveTag();
-                else
-                { if (hiddenCount == 2)
-                    {
-                        name = name.SetTag("   ┌─┐"); //  
-                    } else
-                    if (hiddenCount == 4)
-                    {
-                        name = name.SetTag("   ┌━┐"); // ┌─┐ 
-                    }
-                    else
-                       if (hiddenCount == 5)
-                    {
-                        name = name.SetTag("   ╒═╕");
-                    }
-                    else
-                        name = name.SetTag("   ┌" + hiddenCount + "┐");
-                }
+
+                hiddenCount = 0;
+                hiddenCount = SetBasedOnGetComponents();
                 RepaintHierarchy();
-                //SelectionRepaint()
             }
         }
 
         [Header("In case of invisible objects")]
         public bool unhideAllObjectsInScene;
+        int SetRecursive(Transform transform, HideFlags hideFlags, int startValue = 0)
+        {
+
+            for (int i = 0; i < transform.childCount; i++)
+                startValue += SetRecursive(transform.GetChild(i), hideFlags);
+            transform.hideFlags = hideFlags;
+            return startValue + 1;
+        }
 
         int SetBasedOnGetComponents()
         {
-            Debug.Log("warning, setting visibility based on getcomponentinchildren: this only works on active objects", gameObject);
-            var bs = gameObject.GetComponentsInChildren<LayoutBorderDragger>();
-            var tops = gameObject.GetComponentsInChildren<LayoutTopControl>();
-            int hiddenCount = 0;
-            if (_borderHideMode == BorderHideMode.Hidden)
-                foreach (var t in tops)
-                {
-                    hiddenCount++;
-                    t.gameObject.hideFlags = HideFlags.HideInHierarchy;
-                }
-            if (_borderHideMode == BorderHideMode.Hidden || _borderHideMode == BorderHideMode.TopOnly)
+            var allchildren = transform.GetAllChildren();
+            var alllBorders = this.GetComponentsInChildrenIncludingInactive<LayoutBorderDragger>(allchildren);
+            var allScrols = this.GetComponentsInChildrenIncludingInactive<Scrollbar>(allchildren);
+            var allTops = this.GetComponentsInChildrenIncludingInactive<LayoutTopControl>(allchildren);
+            // Debug.Log($"found {alllBorders.Length}");
+            //            Debug.Log("warning, setting visibility based on getcomponentinchildren: this only works on active objects", gameObject);
+            var panels = gameObject.GetComponentsInChildren<LayoutPanel>();
+            List<LayoutBorderDragger> borders = new List<LayoutBorderDragger>();
+            List<Scrollbar> scrollbars = new List<Scrollbar>();
+            List<LayoutTopControl> tops = new List<LayoutTopControl>(); // = gameObject.GetComponentsInChildren<LayoutTopControl>();
+            scrollbars.AddRange(GetComponentsInChildren<Scrollbar>());
+            foreach (var p in panels)
             {
-                foreach (var b in bs)
+                for (int i = 0; i < p.transform.childCount; i++)
                 {
-                    b.gameObject.hideFlags = HideFlags.HideInHierarchy;
-                    hiddenCount++;
-                }
-            }
-            else
-            {
-                foreach (var t in tops)
-                    t.gameObject.hideFlags = HideFlags.None;
-                foreach (var b in bs)
-                    b.gameObject.hideFlags = HideFlags.None;
-            }
-            return hiddenCount;
-        }
-        int SetBasedOnRoot(Transform source)
-        {
-            int hiddenCount = 0;
-            for (int i = 0; i < source.childCount; i++)
-            {
-                var thisGame = source.GetChild(i).gameObject;
-                if (thisGame.GetComponent<LayoutBorderDragger>() != null)
-                {
-                    if (_borderHideMode == BorderHideMode.Visible)
-                        thisGame.hideFlags = HideFlags.None;
-                    else
-                    {
-                        hiddenCount++;
-                        thisGame.hideFlags = HideFlags.HideInHierarchy;
-                    }
-                }
-                else
-                {
-                    if (thisGame.GetComponent<LayoutTopControl>())
-                        if (_borderHideMode == BorderHideMode.Hidden)
-                        {
-                            hiddenCount++;
-                            thisGame.hideFlags = HideFlags.HideInHierarchy;
-                        }
-                        else
-                        {
-                            thisGame.hideFlags = HideFlags.None;
-                        }
+                    var thischild = p.transform.GetChild(i);
+                    var thisborder = thischild.GetComponent<LayoutBorderDragger>();
+                    if (thisborder != null) borders.Add(thisborder);
+                    var thistop = thischild.GetComponent<LayoutTopControl>();
+                    if (thistop != null) tops.Add(thistop);
+                    //var scroll = thischild.GetComponent<Scrollbar>();
 
                 }
             }
+
+            //var bs = gameObject.GetComponentsInChildren<LayoutBorderDragger>();
+            //var tops = gameObject.GetComponentsInChildren<LayoutTopControl>();
+            int hiddenCount = 0;
+            // unhi
+            foreach (var s in scrollbars)
+                s.gameObject.hideFlags = (_alsoHideSCrollBars && _borderHideMode == BorderHideMode.Hidden) ? HideFlags.HideInHierarchy : HideFlags.None;
+            switch (borderHideMode)
+            {
+                case BorderHideMode.Ignore:
+
+                case BorderHideMode.Visible:
+                    foreach (var t in tops)
+                        t.gameObject.hideFlags = HideFlags.None;
+                    foreach (var b in borders)
+                        b.gameObject.hideFlags = HideFlags.None;
+                    break;
+                case BorderHideMode.HideAll:
+                    for (int i = 0; i < transform.childCount; i++)
+                    {
+                        var thischild = transform.GetChild(i);
+                        if (thischild.hideFlags != HideFlags.HideInHierarchy)
+                            thischild.hideFlags = HideFlags.HideInHierarchy;
+                    }
+
+                    break;
+                case BorderHideMode.Clear:
+                    for (int i = 0; i < transform.childCount; i++)
+                    {
+                        var thischild = transform.GetChild(i);
+                        if (thischild.hideFlags != HideFlags.None)
+                            thischild.hideFlags = HideFlags.None;
+                    }
+
+                    break;
+                case BorderHideMode.Hidden:
+                    foreach (var t in tops)
+                    {
+
+                        t.gameObject.hideFlags = HideFlags.HideInHierarchy;
+                        hiddenCount++;
+                    }
+                    foreach (var b in borders)
+                    {
+                        b.gameObject.hideFlags = HideFlags.HideInHierarchy;
+                        hiddenCount++;
+                    }
+                    break;
+                case BorderHideMode.TopOnly:
+                    foreach (var t in tops)
+                    {
+                        hiddenCount++;
+                        t.gameObject.hideFlags = HideFlags.HideInHierarchy;
+                    }
+                    foreach (var b in borders)
+                    {
+                        b.gameObject.hideFlags = HideFlags.HideInHierarchy;
+                        hiddenCount++;
+                    }
+                    break;
+            }
+
             return hiddenCount;
         }
+
+        // int SetBasedOnNewExtensions()
+        // {
+        //     var allchildren = transform.GetAllChildren();
+        //     var alllBorders = this.GetComponentsInChildrenIncludingInactive<LayoutBorderDragger>(allchildren);
+        //     var allScrols = this.GetComponentsInChildrenIncludingInactive<Scrollbar>(allchildren);
+        //     var allTops = this.GetComponentsInChildrenIncludingInactive<LayoutTopControl>(allchildren);
+
+        //     int hiddenCount = 0;
+        //     if (_borderHideMode == BorderHideMode.Hidden)
+        //         foreach (var t in allTops)
+        //         {
+        //             hiddenCount++;
+        //             t.gameObject.hideFlags = HideFlags.HideInHierarchy;
+        //         }
+        //     if (_borderHideMode == BorderHideMode.Hidden || _borderHideMode == BorderHideMode.TopOnly)
+        //     {
+        //         foreach (var b in alllBorders)
+        //         {
+        //             b.gameObject.hideFlags = HideFlags.HideInHierarchy;
+        //             hiddenCount++;
+        //         }
+        //     }
+        //     else
+        //     {
+        //         foreach (var t in allTops)
+        //             t.gameObject.hideFlags = HideFlags.None;
+        //         foreach (var b in alllBorders)
+        //             b.gameObject.hideFlags = HideFlags.None;
+        //     }
+        //     foreach (var s in allScrols)
+        //         s.gameObject.hideFlags = (_alsoHideSCrollBars && _borderHideMode == BorderHideMode.Hidden) ? HideFlags.HideInHierarchy : HideFlags.None;
+        //     return hiddenCount;
+        // }
+
+        // int SetBasedOnRoot(Transform source)
+        // {
+        //     int hiddenCount = 0;
+        //     for (int i = 0; i < source.childCount; i++)
+        //     {
+        //         var thisGame = source.GetChild(i).gameObject;
+        //         if (thisGame.GetComponent<LayoutBorderDragger>() != null)
+        //         {
+        //             if (_borderHideMode == BorderHideMode.Visible)
+        //                 thisGame.hideFlags = HideFlags.None;
+        //             else
+        //             {
+        //                 hiddenCount++;
+        //                 thisGame.hideFlags = HideFlags.HideInHierarchy;
+        //             }
+        //         }
+        //         else
+        //         {
+        //             if (thisGame.GetComponent<LayoutTopControl>())
+        //                 if (_borderHideMode == BorderHideMode.Hidden)
+        //                 {
+        //                     hiddenCount++;
+        //                     thisGame.hideFlags = HideFlags.HideInHierarchy;
+        //                 }
+        //             else
+        //             {
+        //                 thisGame.hideFlags = HideFlags.None;
+        //             }
+
+        //         }
+        //     }
+        //     return hiddenCount;
+        // }
         void SelectionRepaint()
         {
             // BRUTEFORCE BEGIN
-
+#if UNITY_EDITOR
             var sel = Selection.activeGameObject;
             if (sel == gameObject)
             {
@@ -146,6 +233,7 @@ namespace Z.LayoutPanel
                 }
             }
             // BRUTEFORCE END
+#endif
         }
         public static void RepaintHierarchy()
         {
@@ -155,22 +243,21 @@ namespace Z.LayoutPanel
                 EditorApplication.RepaintHierarchyWindow();
                 EditorApplication.DirtyHierarchyWindowSorting();
             }
-            catch { }
+            catch {}
 #endif
         }
-
 
 #if UNITY_EDITOR
         void Reset()
         {
-            for (int i = 0; i < 41; i++)
-                UnityEditorInternal.ComponentUtility.MoveComponentUp(this);
+            // for (int i = 0; i < 41; i++)                 
+            // UnityEditorInternal.ComponentUtility.MoveComponentUp(this); //shit do not do this, messes up nested prefabs
             borderHideMode = BorderHideMode.Hidden;
 
             var b = GetComponentInChildren<LayoutBorderDragger>();
-            if (b != null) borderColor = b.GetComponent<Image>().color;
-            else
-                borderColor = Color.gray * 0.6f + (new Color(Random.value, Random.value, Random.value)) * 0.3f;
+            // if (b != null) borderColor = b.GetComponent<Image>().color;
+            // else
+            //     borderColor = Color.gray * 0.6f + (new Color(Random.value, Random.value, Random.value)) * 0.3f;
 
         }
 #endif
@@ -200,35 +287,46 @@ namespace Z.LayoutPanel
             Debug.Log("Modified " + modified + " objects out of total of " + all.Length);
 #endif
         }
+        void OnEnable()
+        {
+            _lastHideMode=BorderHideMode.Ignore;//
+            OnValidate();
+        }
         void OnValidate()
         {
+            var list = transform.GetAllChildren();
+            if (_borderHideMode == _lastHideMode)
+                 return;
             borderHideMode = _borderHideMode;
-            if (unhideAllObjectsInScene) UnhideAll();
+            _lastHideMode = borderHideMode;
 
+            if (unhideAllObjectsInScene) UnhideAll();
             // borderHideMode = BorderHideMode.Visible;
-            if (editColors)
-            {
-                if (applyToAllChildren)
-                {
-                    var bs = gameObject.GetComponentsInChildren<LayoutBorderDragger>();
-                    foreach (var b in bs)
-                        b.GetComponent<Image>().color = borderColor;
-                }
-                else
-                {
-                    var bs = gameObject.GetComponentsInDirectChildren<LayoutBorderDragger>();
-                    foreach (var b in bs)
-                        b.GetComponent<Image>().color = borderColor;
-                }
-            }
+            // if (editColors)
+            // {
+            //     if (applyToAllChildren)
+            //     {
+            //         var bs = gameObject.GetComponentsInChildren<LayoutBorderDragger>();
+            //         foreach (var b in bs)
+            //             b.GetComponent<Image>().color = borderColor;
+            //     }
+            //     else
+            //     {
+            //         var bs = gameObject.GetComponentsInDirectChildren<LayoutBorderDragger>();
+            //         foreach (var b in bs)
+            //             b.GetComponent<Image>().color = borderColor;
+            //     }
+            // }
+            // SetObjectName();
         }
         void OnDestroy()
         {
             borderHideMode = BorderHideMode.Visible;
         }
 
+        #region concept_that_wasnt_so_great
 
-#if UNITY_EDITOR_not
+#if NOT
         [ExposeMethodInEditor]
         void SelectBorders()
         {
@@ -265,15 +363,15 @@ namespace Z.LayoutPanel
                 }
             }
         }
-        
 
         [ExposeMethodInEditor]
         void SelectFrames()
         {
-            var draggers= transform.parent.GetComponentsInChildren<LayoutBorderDragger>();
-            UnityEditor.Selection.objects =draggers.ToList().Select(x => { return x.gameObject; }) as GameObject[];
+            var draggers = transform.parent.GetComponentsInChildren<LayoutBorderDragger>();
+            UnityEditor.Selection.objects = draggers.ToList().Select(x => { return x.gameObject; }) as GameObject[];
 
         }
 #endif
+        #endregion
     }
 }

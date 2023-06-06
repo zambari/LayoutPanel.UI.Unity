@@ -4,16 +4,6 @@ using UnityEngine;
 using UnityEngine.UI;
 namespace Z.LayoutPanel
 {
-    public interface IDropTarget
-    {
-        int targetDropIndex { get; }
-        Transform dropTarget { get; }
-        Transform transform { get; }
-        GameObject gameObject { get; }
-        bool isHorizontalBar { get; }
-        bool isPanelHorizontal { get; }
-        string name { get; }
-    }
 
 
     public static class LayoutDropTarget

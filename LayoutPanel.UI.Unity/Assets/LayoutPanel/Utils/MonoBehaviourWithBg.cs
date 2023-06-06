@@ -1,14 +1,12 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using LayoutPanelDependencies;
+﻿
 using UnityEngine;
-using UnityEngine.UI;
+
+// moved to z namespace
 namespace Z.LayoutPanel
 {
+  
     public abstract class MonoBehaviourWithBg : MonoBehaviour
     {
         public DrawInspectorBg draw;
-
-
     }
 }

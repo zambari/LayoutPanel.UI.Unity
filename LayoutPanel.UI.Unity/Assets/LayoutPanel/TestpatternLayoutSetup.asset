@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6b0306d800bdc54884f69ef61f7a1ca, type: 3}
+  m_Name: TestpatternLayoutSetup
+  m_EditorClassIdentifier: 
+  panelSpacing: 4
+  borderSetup:
+    baseColor: {r: 0.198, g: 0.439, b: 0.459, a: 1}
+    borderSizeBottom: 4
+    borderSizeTop: 4
+    linkTopAndSides: 1
+    borderSizeH: 4
+    linkTopAndBottom: 1
+    extendToFillCornersHorizontal: 1
+    sidesFillBottomCorners: 1
+    sidesFillTopCorners: 1
+    bordersPlacedInside: 0
+    topBorder: 1
+    bottomBorder: 1
+    normalAlpha: 0.518
+    hoveredAlpha: 0.788
+    topDragEnabled: 0
+    dropTargetColor: {r: 0.2, g: 1, b: 0.2, a: 0.8}
+    dropTargetColorWhenSplit: {r: 0.7, g: 0.2, b: 0.7, a: 0.8}
+    verticalSizeOffset: 120
+    offsetSide: 0
+  panelSpacingOffserHoriz: 4
+  topHeight: 15
+  mainhorizontalSettings:
+    useSettings: 1
+    spacing: 8
+    sharedSpacing: 0
+    padding:
+      m_Left: 0
+      m_Right: 0
+      m_Top: 0
+      m_Bottom: 0
+    spacingTimesBorder: 1
+  columnGroupSettings:
+    useSettings: 1
+    spacing: 4
+    sharedSpacing: 1
+    padding:
+      m_Left: 0
+      m_Right: 0
+      m_Top: 0
+      m_Bottom: 0
+    spacingTimesBorder: 1
+  panelGroupSettings:
+    useSettings: 1
+    spacing: 5.15
+    sharedSpacing: 1
+    padding:
+      m_Left: 0
+      m_Right: 0
+      m_Top: 0
+      m_Bottom: 0
+    spacingTimesBorder: 1
