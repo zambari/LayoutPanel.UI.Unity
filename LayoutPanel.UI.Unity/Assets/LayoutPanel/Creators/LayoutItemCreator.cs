@@ -36,6 +36,14 @@ namespace Z.LayoutPanel
 
 		private void Reset()
 		{
+			var layoutSteup = GetComponentInParent<LayoutSetupProvider>();
+			if (layoutSteup == null)
+			{
+				var parent = transform;
+				while (parent.parent != null) parent = parent.parent;
+				parent.gameObject.AddComponent<LayoutSetupProvider>();
+			}
+
 			var allcoponents = gameObject.GetComponents<Component>();
 			int thispos = 0;
 			for (int i = 0; i < allcoponents.Length; i++)
@@ -141,7 +149,6 @@ namespace Z.LayoutPanel
 #endif
 		}
 
-		[LPExposeMethodInEditor]
 		public void Add_Child_And_ConvertToPanel()
 		{
 			var child = GetComponent<RectTransform>().AddChild();
@@ -158,19 +165,16 @@ namespace Z.LayoutPanel
 			}
 		}
 
-		[LPExposeMethodInEditor]
 		public void Convert_This_To_LayoutPanel()
 		{
 			gameObject.ConvertToLayoutPanel();
 		}
 
-		[LPExposeMethodInEditor]
 		public void Sub_Divde_Layout()
 		{
 			SubDivdeLayout(subdivideCount);
 		}
 #if UNITY_EDITOR
-		[LPExposeMethodInEditor]
 		public void DisassemblePanel()
 		{
 			for (int i = transform.childCount - 1; i >= 0; i--)

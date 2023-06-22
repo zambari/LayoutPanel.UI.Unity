@@ -312,8 +312,8 @@ namespace Z.LayoutPanel
 
 		private void GetCursor()
 		{
-			if (isHorizontal) hoverCursor = zResourceLoader.horizontalCursor;
-			else hoverCursor = zResourceLoader.vertialCursor;
+			if (isHorizontal) hoverCursor = LayoutResourceLoader.horizontalCursor;
+			else hoverCursor = LayoutResourceLoader.vertialCursor;
 		}
 
 		public void OnValidate()
@@ -609,7 +609,7 @@ namespace Z.LayoutPanel
 			Cursor.SetCursor(null, cursorCenter, CursorMode.Auto);
 		}
 #if UNITY_EDITOR
-		[LPExposeMethodInEditor]
+	
 		void ManageVisibility()
 		{
 			LayoutBorderHide bh = transform.parent.gameObject.AddOrGetComponent<LayoutBorderHide>();

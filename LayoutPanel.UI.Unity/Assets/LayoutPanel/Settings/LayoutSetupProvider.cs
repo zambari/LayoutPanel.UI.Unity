@@ -5,6 +5,8 @@ using UnityEngine;
 
 namespace Z.LayoutPanel
 {
+	using System.Linq;
+
 	[ExecuteInEditMode]
 	public class LayoutSetupProvider : ScriptbaleObjectInstanceProvider<LayoutSetup> //, IRequestInitEarly
 	{
@@ -12,6 +14,10 @@ namespace Z.LayoutPanel
 		static List<IBorderControlListener> borderDraggers;
 
 		public Action<LayoutSetup> onChanged;
+
+		public static LayoutSetup setup => instance?.collection;
+
+		float lastSet = -1;
 
 		private static LayoutSetupProvider _instance;
 
@@ -24,6 +30,12 @@ namespace Z.LayoutPanel
 			}
 		}
 
+		private void Reset()
+		{
+			var foundSetup = Resources.FindObjectsOfTypeAll<LayoutSetup>();
+			collection = foundSetup.FirstOrDefault();
+		}
+
 		public int borderSize
 		{
 			get { return setup.borderSize; }
@@ -33,12 +45,6 @@ namespace Z.LayoutPanel
 				OnValidate();
 			}
 		}
-
-		public static LayoutSetup setup => instance?.collection;
-
-		public bool inerseqr;
-
-		float lastSet = -1;
 
 		public bool topEnabled
 		{
@@ -143,7 +149,7 @@ namespace Z.LayoutPanel
 
 		public static bool isReady
 		{
-			get { return instance != null; }
+			get { return instance != null && setup != null; }
 		}
 
 		private void OnValidate()
@@ -174,7 +180,7 @@ namespace Z.LayoutPanel
 			}
 		}
 
-		[LPExposeMethodInEditor]
+		// [LPExposeMethodInEditor]
 		void BroadcastEvents()
 		{
 			BroadcastSetup(setup);

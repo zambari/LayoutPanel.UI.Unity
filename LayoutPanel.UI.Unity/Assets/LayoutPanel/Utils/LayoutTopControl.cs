@@ -102,7 +102,7 @@ namespace Z.LayoutPanel
 			}
 
 			panel.isBeingDragged = true;
-			Cursor.SetCursor(zResourceLoader.panCursor, LayoutBorderDragger.cursorCenter, CursorMode.Auto);
+			Cursor.SetCursor(LayoutResourceLoader.panCursor, LayoutBorderDragger.cursorCenter, CursorMode.Auto);
 		}
 
 		public void OnDrag(PointerEventData e)

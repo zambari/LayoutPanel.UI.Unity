@@ -90,14 +90,6 @@ namespace Z.LayoutPanel
 			}
 		}
 
-		private static bool CheckCreateCondition(LayoutItemCreator c, bool checkForChildren)
-		{
-			if (checkForChildren) return c.transform.childCount == 0;
-
-			return
-				c.transform.parent.GetComponent<LayoutItemCreator>() == null;
-		}
-
 		public static Text AddTextChild(this GameObject g, string content = "no text")
 		{
 			Text text = g.AddChildRectTransform().gameObject.AddComponent<Text>();
@@ -105,38 +97,13 @@ namespace Z.LayoutPanel
 			return text;
 		}
 
-		public static void LaunchItemCreators(this GameObject src, bool checkForChildren, bool onlyCreateBorders)
-		{
-			var itemcr = src.GetComponentsInChildren<LayoutItemCreator>();
-			int processed = 0;
-			int notprocssed = 0;
-			foreach (var i in itemcr)
-			{
-				if (CheckCreateCondition(i, checkForChildren))
-				{
-					if (onlyCreateBorders)
-					{
-						i.AddBorders();
-					}
-					else
-					{
-						i.ConvertToLayoutPanel();
-					}
-
-					processed++;
-				}
-				else notprocssed++;
-			}
-
-			// Debug.Log("Processed " + processed + " not processed " + notprocssed);
-		}
-
 		public static Text AddFoldStatus(this Button button, Color textColor, Font font)
 		{
 			var btnRect = button.GetComponent<RectTransform>();
 			var text = btnRect.gameObject.AddTextChild(LayoutFoldController.labelUnfolded);
 			text.name = "FoldIndicatorText";
-			text.font = font;
+
+			// text.font = font;
 			text.color = textColor;
 			text.alignment = TextAnchor.MiddleCenter;
 			var textRect = text.GetComponent<RectTransform>();
@@ -218,11 +185,6 @@ namespace Z.LayoutPanel
 			return list;
 		}
 
-		private static List<LayoutItemCreator> AddItemCreatorsToChildren(List<GameObject> target)
-		{
-			return target.AddComponentsToAllGameObjects<LayoutItemCreator>();
-		}
-
 		public static List<GameObject> AddBorders(
 			this Component src,
 			LayoutBorderHide.BorderHideMode borderHideMode = LayoutBorderHide.BorderHideMode.Visible)
@@ -246,7 +208,8 @@ namespace Z.LayoutPanel
 				list.Add(thisChild.gameObject);
 				var side = (Side)i;
 				d.side = side;
-				Debug.Log($" for {i} {side} the name is {d.name}", thisChild.gameObject);
+
+				// Debug.Log($" for {i} {side} the name is {d.name}", thisChild.gameObject);
 #if UNITY_EDITOR
 				UnityEditor.Undo.RegisterCreatedObjectUndo(thisChild.gameObject, "borders");
 #endif
@@ -320,7 +283,8 @@ namespace Z.LayoutPanel
 				labelText = topControl.gameObject.AddTextChild();
 				labelText.name = "Panel Label";
 				labelText.text = name;
-				labelText.font = font;
+
+				//	labelText.font = font;
 				labelText.alignment = TextAnchor.MiddleLeft;
 				labelText.color = textColor;
 				var textRect = labelText.GetComponent<RectTransform>();
@@ -335,14 +299,14 @@ namespace Z.LayoutPanel
 			return labelText;
 		}
 
-		public static Font defaultFont
-		{
-			get { return Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); }
-		}
+		// public static Font defaultFont
+		// {
+		// 	get { return Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); }
+		// }
 
 		public static LayoutPanel ConvertToLayoutPanel(this Component component)
 		{
-			return component.GetComponent<RectTransform>().ConvertToLayoutPanel(Color.white, defaultFont);
+			return component.GetComponent<RectTransform>().ConvertToLayoutPanel(Color.white, null);
 		}
 
 		public static Text HandleTextRaycastCatchers(GameObject a, Color textColor, float margin, Font font = null)
@@ -353,8 +317,9 @@ namespace Z.LayoutPanel
 			text.GetComponent<RectTransform>().sizeDelta = new Vector2(2 * margin, 2 * margin);
 			text.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
 			text.name = "raycast catcher";
-			if (font == null) font = defaultFont;
-			text.font = font;
+
+			// if (font == null) font = defaultFont;
+			// text.font = font;
 			text.color = textColor;
 			return text;
 		}
@@ -384,8 +349,6 @@ namespace Z.LayoutPanel
 		{
 			var frame = rect.AddFillingChild(0, "Frame");
 			frame.AddIgnoreLayoutElement();
-
-			if (font == null) font = defaultFont;
 
 			var topControl = frame.AddTop(Color.black * .4f);
 			var toprect = topControl.GetComponent<RectTransform>();
@@ -422,58 +385,12 @@ namespace Z.LayoutPanel
 			}
 		}
 
-		private static void AmendName(GameObject where)
+		internal static void AmendName(GameObject where)
 		{
 			if (!amendName) return;
 
 			var nameHelper = where.AddOrGetComponent<LayoutNameHelper>();
 			nameHelper.UpdateName();
-		}
-
-		public static List<LayoutItemCreator> CreateHorizontalLayoutCreators(this GameObject where, int thisSplitCount)
-		{
-			var vg = where.GetComponent<VerticalLayoutGroup>();
-			if (vg != null) GameObject.DestroyImmediate(vg);
-			var list = AddComponentsToAllGameObjects<LayoutItemCreator>(
-				where.GetComponent<RectTransform>().SplitToLayout(true, thisSplitCount));
-			AmendName(where);
-			return list;
-		}
-
-		public static List<LayoutItemCreator> CreateVerticalLayoutCreators(this GameObject where, int thisSplitCount)
-		{
-			var hg = where.GetComponent<HorizontalLayoutGroup>();
-			if (hg != null) GameObject.DestroyImmediate(hg);
-			var list = AddComponentsToAllGameObjects<LayoutItemCreator>(
-				where.GetComponent<RectTransform>().SplitToLayout(false, thisSplitCount));
-
-			AmendName(where);
-			return list;
-		}
-
-		public static List<LayoutSplitCreator> CreateHorizontalLayoutSplits(this GameObject where, int thisSplitCount)
-		{
-			var vg = where.GetComponent<VerticalLayoutGroup>();
-			if (vg != null) GameObject.DestroyImmediate(vg);
-			var list = AddComponentsToAllGameObjects<LayoutSplitCreator>(
-				where.GetComponent<RectTransform>().SplitToLayout(true, thisSplitCount));
-			foreach (var item in list)
-			{
-				item.splitType = LayoutSplitCreator.SplitType.Vertical;
-			}
-
-			AmendName(where);
-			return list;
-		}
-
-		public static List<LayoutSplitCreator> CreateVerticalLayoutSplits(this GameObject where, int thisSplitCount)
-		{
-			var hg = where.GetComponent<HorizontalLayoutGroup>();
-			if (hg != null) GameObject.DestroyImmediate(hg);
-			var list = AddComponentsToAllGameObjects<LayoutSplitCreator>(
-				where.GetComponent<RectTransform>().SplitToLayout(false, thisSplitCount));
-			AmendName(where);
-			return list;
 		}
 
 		public static List<T> CreateHorizontalLayoutWithComponents<T>(this GameObject where, int thisSplitCount)

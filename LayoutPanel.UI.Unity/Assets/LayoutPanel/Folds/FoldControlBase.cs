@@ -93,7 +93,7 @@
 
 		private List<IFoldController> grabbedList;
 
-		[LPExposeMethodInEditor]
+		// [LPExposeMethodInEditor]
 		public virtual async void ToggleFold()
 		{
 			if (isLocked)

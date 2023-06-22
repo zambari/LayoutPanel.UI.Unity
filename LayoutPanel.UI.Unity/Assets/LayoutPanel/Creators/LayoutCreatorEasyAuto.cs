@@ -38,14 +38,12 @@ namespace Z.LayoutPanel
 
 		public bool addRandomTexstOnCreate;
 
-		[LPExposeMethodInEditor]
-		private void BackToCreator()
+		public void BackToCreator()
 		{
 			if (gameObject.GetComponent<LayoutCreator>() == null) gameObject.AddComponent<LayoutCreator>();
 			GameObject.DestroyImmediate(this);
 		}
 
-		[LPExposeMethodInEditor]
 		public void CreateRandomLayout()
 		{
 			var creator = gameObject.AddOrGetComponent<LayoutCreatorAdvanced>();
@@ -83,7 +81,7 @@ namespace Z.LayoutPanel
 			// DestroyImmediate(creator);
 		}
 
-		[LPExposeMethodInEditor]
+	
 		public void RemoveAllChildren()
 		{
 			for (int i = transform.childCount - 1; i >= 0; i--)

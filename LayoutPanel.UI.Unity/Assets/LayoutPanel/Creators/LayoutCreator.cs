@@ -18,22 +18,19 @@ namespace Z.LayoutPanel
 
 		
 
-		[LPExposeMethodInEditor]
-		private void AddSimpleLayoutSpliter()
+		public void AddSimpleLayoutSpliter()
 		{
 			gameObject.AddOrGetComponent<LayoutSplitCreator>();
 			GameObject.DestroyImmediate(this);
 		}
 
-		[LPExposeMethodInEditor]
-		private void AddEasyAutoLayoutCreator()
+		public void AddEasyAutoLayoutCreator()
 		{
 			gameObject.AddOrGetComponent<LayoutCreatorEasyAuto>();
 			GameObject.DestroyImmediate(this);
 		}
 
-		[LPExposeMethodInEditor]
-		private void AddAdvancedLayoutCreator()
+		public void AddAdvancedLayoutCreator()
 		{
 			gameObject.AddOrGetComponent<LayoutCreatorAdvanced>();
 			var easy = gameObject.GetComponent<LayoutCreatorEasyAuto>();

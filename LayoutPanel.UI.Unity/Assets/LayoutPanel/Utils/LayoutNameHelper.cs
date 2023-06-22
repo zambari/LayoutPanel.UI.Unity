@@ -164,11 +164,11 @@ namespace Z.LayoutPanel
 				//  if (vg != null)
 				//       vg.SetParams(layoutPanel);
 			}
-
-			if (settings.showCreators)
-			{
-				if (GetComponent<LayoutItemCreator>() != null) depthString += " ❆ ";
-			}
+			//
+			// if (settings.showCreators)
+			// {
+			// 	if (GetComponent<LayoutItemCreator>() != null) depthString += " ❆ ";
+			// }
 
 			string endtag = "";
 			if (settings.showLayoutGroupComponents)
@@ -192,9 +192,9 @@ namespace Z.LayoutPanel
 
 		int GetDepth()
 		{
-			var creator = GetComponentInParent<LayoutCreator>();
+			// var creator = GetComponentInParent<LayoutCreator>();
 			Transform lookFor = null;
-			if (creator != null) lookFor = creator.transform;
+			// if (creator != null) lookFor = creator.transform;
 			int thisDepth = 1;
 			Transform thisTransform = transform;
 			if (thisTransform == lookFor)

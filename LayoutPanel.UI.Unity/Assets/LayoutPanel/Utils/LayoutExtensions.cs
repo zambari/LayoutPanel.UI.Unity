@@ -228,7 +228,7 @@
 			vl.padding = new RectOffset(3, 3, 3, 3);
 			vl.childControlWidth = true;
 			vl.childControlHeight = true;
-			vl.childForceExpandHeight = true;
+			vl.childForceExpandHeight = false;
 			vl.childForceExpandWidth = false;
 		}
 
@@ -251,7 +251,7 @@
 			vl.padding = new RectOffset(3, 3, 3, 3);
 			vl.childControlWidth = true;
 			vl.childControlHeight = true;
-			vl.childForceExpandHeight = true;
+			vl.childForceExpandHeight = false;
 			vl.childForceExpandWidth = false;
 		}
 

@@ -45,7 +45,6 @@ namespace Z.LayoutPanel
 			splitCount += Random.Range(0, 3);
 		}
 
-		[LPExposeMethodInEditor]
 		public void Split()
 		{
 			bool thisHorizontal = splitType == SplitType.Horizontal;
@@ -87,8 +86,7 @@ namespace Z.LayoutPanel
 #endif
 		}
 
-		[LPExposeMethodInEditor]
-		private void AddItemCreator()
+		public void AddItemCreator()
 		{
 			var component = gameObject.AddOrGetComponent<LayoutItemCreator>();
 #if UNITY_EDITOR
@@ -97,7 +95,6 @@ namespace Z.LayoutPanel
 #endif
 		}
 
-		[LPExposeMethodInEditor]
 		public void RemoveAllChildren()
 		{
 			for (int i = transform.childCount - 1; i >= 0; i--)
@@ -109,7 +106,6 @@ namespace Z.LayoutPanel
 			name = "Empty";
 		}
 
-		[LPExposeMethodInEditor]
 		public void RemoveCreators()
 		{
 			var creators = GetComponentsInChildren<LayoutCreatorBase>();
@@ -121,8 +117,7 @@ namespace Z.LayoutPanel
 			}
 		}
 
-		[LPExposeMethodInEditor]
-		private void BackToCreator()
+		public void BackToCreator()
 		{
 			if (gameObject.GetComponent<LayoutCreator>() == null) gameObject.AddComponent<LayoutCreator>();
 			GameObject.DestroyImmediate(this);

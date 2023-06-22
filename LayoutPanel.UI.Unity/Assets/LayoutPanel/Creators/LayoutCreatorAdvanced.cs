@@ -200,7 +200,7 @@ namespace Z.LayoutPanel
 				return;
 			}
 
-			Image image = GetComponent<Image>();
+			Image image = gameObject.AddOrGetComponent<Image>();
 			if (image.color == Color.white)
 			{
 				Undo.RegisterCompleteObjectUndo(image, "color");
@@ -245,27 +245,23 @@ namespace Z.LayoutPanel
 			foreach (var h in nameH) h.UpdateName();
 		}
 
-		[LPExposeMethodInEditor]
-		private void BackToCreator()
+		public void BackToCreator()
 		{
 			if (gameObject.GetComponent<LayoutCreator>() == null) gameObject.AddComponent<LayoutCreator>();
 			GameObject.DestroyImmediate(this);
 		}
 
-		[LPExposeMethodInEditor]
 		public void CreateHorizontalLayoutSlpit()
 		{
 			gameObject.CreateHorizontalLayoutCreators(3);
 		}
 
-		[LPExposeMethodInEditor]
 		public void CreateVerticalLayoutSlpit()
 		{
 			gameObject.CreateVerticalLayoutCreators(3);
 		}
 
-		[LPExposeMethodInEditor]
-		private void RemoveAllCreators()
+		public void RemoveAllCreators()
 		{
 #if UNITY_EDITOR
 			var cr = GetComponentsInChildren<LayoutItemCreator>();
@@ -274,7 +270,6 @@ namespace Z.LayoutPanel
 #endif
 		}
 
-		[LPExposeMethodInEditor]
 		public void RemoveAllChildren()
 		{
 			for (int i = transform.childCount - 1; i >= 0; i--)
@@ -285,13 +280,11 @@ namespace Z.LayoutPanel
 #endif
 		}
 
-		[LPExposeMethodInEditor]
 		public void LaunchItemCreators()
 		{
 			gameObject.LaunchItemCreators(checkForChildren, onlyCreateBorders);
 		}
 #if UNITY_EDITOR
-		[LPExposeMethodInEditor]
 		public void SelectAllCreators()
 		{
 			List<GameObject> games = new List<GameObject>();

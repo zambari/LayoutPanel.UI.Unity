@@ -6,7 +6,6 @@ using UnityEngine.UI;
 
 // using zUI;
 
-
 namespace Z.LayoutPanel
 {
 	[ExecuteInEditMode]
@@ -42,7 +41,6 @@ namespace Z.LayoutPanel
 		Image _topImage;
 
 		public SubPanel parentSubPanel;
-
 
 		// public Image image { get { if (_imageForColors == null) _imageForColors = GetComponentInChildren<Image>(); return _imageForColors; } }
 
@@ -95,7 +93,6 @@ namespace Z.LayoutPanel
 			}
 		}
 
-		[LPExposeMethodInEditor]
 		void SetPadding()
 		{
 			RectOffset padding = layoutGroup.padding;

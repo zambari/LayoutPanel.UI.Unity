@@ -6,14 +6,22 @@
 	{
 		protected virtual void Reset()
 		{
-			var bc = GameObject.FindObjectOfType<LayoutSetupProvider>();
-			if (bc == null)
+			var layoutSteup = GetComponentInParent<LayoutSetupProvider>();
+			if (layoutSteup == null)
 			{
-				var where = transform;
-				while (where.parent != null) where = where.parent;
-				where.gameObject.AddComponent<LayoutSetupProvider>();
-				Debug.Log("Added LayoutBorderControl");
+				var parent = transform;
+				while (parent.parent != null) parent = parent.parent;
+				parent.gameObject.AddComponent<LayoutSetupProvider>();
 			}
+
+			// var bc = GameObject.FindObjectOfType<LayoutSetupProvider>();
+			// if (bc == null)
+			// {
+			// 	var where = transform;
+			// 	while (where.parent != null) where = where.parent;
+			// 	where.gameObject.AddComponent<LayoutSetupProvider>();
+			// 	Debug.Log("Added LayoutBorderControl");
+			// }
 		}
 	}
 }

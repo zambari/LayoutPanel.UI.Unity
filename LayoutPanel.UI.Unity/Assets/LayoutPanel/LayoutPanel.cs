@@ -238,9 +238,9 @@ namespace Z.LayoutPanel
 			// 	}
 			// }
 #if UNITY_EDITOR
-			var creator = GetComponent<LayoutItemCreator>();
-
-			if (creator != null) UnityEditor.EditorApplication.delayCall += () => { DestroyImmediate(creator); };
+			// var creator = GetComponent<LayoutItemCreator>();
+			//
+			// if (creator != null) UnityEditor.EditorApplication.delayCall += () => { DestroyImmediate(creator); };
 #endif
 
 			//       if (nameHelper == null) nameHelper = gameObject.AddOrGetComponent<LayoutNameHelper>();
