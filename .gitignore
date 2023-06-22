@@ -30,3 +30,5 @@ obj/
 *.booproj
 
 LayoutPanel.UI.Unity/.vscode/
+
+LayoutPanel.UI.Unity/Logs/
