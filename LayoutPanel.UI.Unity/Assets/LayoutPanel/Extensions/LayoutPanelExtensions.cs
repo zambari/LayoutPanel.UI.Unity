@@ -14,7 +14,7 @@ namespace Z.LayoutPanel
 	{
 		private static bool amendName = false;
 
-		private const int padLeft = 4;
+		private const int padLeft = 0;
 
 		private static int padRight => padLeft;
 
@@ -306,7 +306,7 @@ namespace Z.LayoutPanel
 
 		public static LayoutPanel ConvertToLayoutPanel(this Component component)
 		{
-			return component.GetComponent<RectTransform>().ConvertToLayoutPanel(Color.white, null);
+			return component.GetComponent<RectTransform>().ConvertToLayoutPanel(true,Color.white , null);
 		}
 
 		public static Text HandleTextRaycastCatchers(GameObject a, Color textColor, float margin, Font font = null)
@@ -345,7 +345,7 @@ namespace Z.LayoutPanel
 			return rect;
 		}
 
-		public static LayoutPanel ConvertToLayoutPanel(this RectTransform rect, Color textColor, Font font = null)
+		public static LayoutPanel ConvertToLayoutPanel(this RectTransform rect, bool createScrollRect, Color textColor, Font font = null)
 		{
 			var frame = rect.AddFillingChild(0, "Frame");
 			frame.AddIgnoreLayoutElement();
@@ -366,12 +366,15 @@ namespace Z.LayoutPanel
 			foldController.FoldComponent();
 			rect.FoldComponent();
 			frame.AddBorders(LayoutBorderHide.BorderHideMode.Visible);
-			var contentSizeFitter = rect.gameObject.AddComponent<ContentSizeFitter>();
+			var contentSizeFitter = rect.gameObject.AddOrGetComponent<ContentSizeFitter>();
 			contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+			if (createScrollRect) layoutPanel.content = rect.CreateScrollView();
+			
 			return layoutPanel;
 		}
 
-		public static void AddRandomTexts(this RectTransform rect)
+		public static void AddRandomTexts(this Transform rect)
 		{
 			for (int i = 0; i < Random.Range(3, 9); i++)
 			{

@@ -17,7 +17,11 @@ namespace Z.LayoutPanel
 		public LayoutGroupSettings groupSettings = new LayoutGroupSettings();
 
 		
-
+		public void AddItemCreator()
+		{
+			gameObject.AddOrGetComponent<LayoutItemCreator>();
+			GameObject.DestroyImmediate(this);
+		}
 		public void AddSimpleLayoutSpliter()
 		{
 			gameObject.AddOrGetComponent<LayoutSplitCreator>();

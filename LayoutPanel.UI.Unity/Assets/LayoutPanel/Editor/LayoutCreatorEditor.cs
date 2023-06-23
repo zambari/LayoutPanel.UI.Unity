@@ -15,10 +15,13 @@ namespace Z.LayoutPanel.EditorCreators
 		public override void OnInspectorGUI()
 		{
 			DrawDefaultInspector();
+
 			var creator = target as LayoutCreator;
-			AddButton(nameof(creator.AddSimpleLayoutSpliter),creator.AddSimpleLayoutSpliter);
-			AddButton(nameof(creator.AddEasyAutoLayoutCreator),creator.AddEasyAutoLayoutCreator);
-			AddButton(nameof(creator.AddAdvancedLayoutCreator),creator.AddAdvancedLayoutCreator);
+			AddButton(nameof(creator.AddItemCreator), creator.AddItemCreator);
+			AddButton(nameof(creator.AddSimpleLayoutSpliter), creator.AddSimpleLayoutSpliter);
+			AddButton(nameof(creator.AddEasyAutoLayoutCreator), creator.AddEasyAutoLayoutCreator);
+			AddButton(nameof(creator.AddAdvancedLayoutCreator), creator.AddAdvancedLayoutCreator);
+
 			// AddButton(nameof(creator.AddSimpleLayoutSpliter),creator.AddSimpleLayoutSpliter);
 		}
 	}

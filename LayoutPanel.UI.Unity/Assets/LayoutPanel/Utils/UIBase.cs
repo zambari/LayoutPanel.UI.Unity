@@ -94,6 +94,7 @@
 		public Transform content
 		{
 			get { return objectReferences._content; }
+			set { objectReferences._content = value; }
 		}
 
 		public RectTransform contentRect

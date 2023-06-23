@@ -6,6 +6,8 @@ using UnityEngine.UI;
 
 using Z.LayoutPanel;
 
+// this class has been  automatically generated using UIDumpParams.cs tool
+
 public class ConvertToScrollTest : MonoBehaviour
 {
 	// Start is called before the first frame update

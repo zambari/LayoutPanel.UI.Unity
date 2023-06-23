@@ -156,10 +156,10 @@ namespace Z.LayoutPanel
 #if UNITY_EDITOR
 			Undo.RegisterCreatedObjectUndo(child.gameObject, "child");
 #endif
-			child.ConvertToLayoutPanel(textColor);
+			var panel = child.ConvertToLayoutPanel(true, textColor);
 			if (addRandomTexstOnCreate)
 			{
-				child.AddRandomTexts();
+				panel.content.AddRandomTexts();
 				var contentSize = child.gameObject.AddComponent<ContentSizeFitter>();
 				contentSize.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 			}
@@ -185,6 +185,7 @@ namespace Z.LayoutPanel
 			}
 		}
 #endif
+
 		//
 		//
 		// [LPExposeMethodInEditor]

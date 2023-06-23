@@ -35,7 +35,7 @@ namespace Z.LayoutPanel
 
 		[Range(1, 6)]
 		public int splitCount =
-			2;
+			3;
 
 		private bool addRandomTexstOnCreate = true;
 
