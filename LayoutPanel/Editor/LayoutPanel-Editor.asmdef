@@ -1,0 +1,19 @@
+{
+    "name": "LayoutPanel-Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:13bb5c97456389f42826812c96c65c37"
+    ],
+    "includePlatforms": [
+        "Editor",
+        "iOS"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
